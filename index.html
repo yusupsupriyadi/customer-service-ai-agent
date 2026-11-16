@@ -4,73 +4,61 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CS Agent: Aplikasi dan Tutorial</title>
-  <!-- Archivo Black untuk judul tebal ala poster, Archivo untuk teks biasa. -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700&family=Archivo+Black&display=swap">
   <!-- Tailwind versi browser: langsung jalan tanpa proses build, cocok untuk belajar. -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
   <style type="text/tailwindcss">
-    /* Token desain. Tailwind otomatis membuat class seperti bg-pop-pink dan shadow-hard dari sini. */
+    /* Token warna. Tailwind otomatis membuat class seperti bg-accent dan bg-paper dari sini. */
     @theme {
-      --color-pop-yellow: #ffe14d;
-      --color-pop-pink: #ff8fc7;
-      --color-pop-cyan: #6fe3f5;
-      --color-cream: #fff6dc;
-      --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
-      --font-display: "Archivo Black", "Archivo", ui-sans-serif, system-ui, sans-serif;
-      --shadow-hard: 6px 6px 0 0 #000;
-      --shadow-hard-sm: 3px 3px 0 0 #000;
+      --color-accent: #ffe14d;
+      --color-paper: #f5f4ef;
     }
     @layer base {
       button, summary, a[href], label[for], input[type="checkbox"], input[type="file"] { cursor: pointer; }
       button:disabled, input:disabled { cursor: not-allowed; }
       :focus-visible { outline: 3px solid #000; outline-offset: 3px; }
-      .on-dark :focus-visible { outline-color: var(--color-pop-yellow); }
     }
-    /* Komponen neo-brutalism: garis hitam tebal, bayangan keras, sudut siku. */
+    /* Komponen: garis hitam tebal dan sudut siku, tanpa bayangan. */
     @layer components {
-      .panel { @apply border-3 border-black bg-white shadow-hard; }
+      .panel { @apply border-3 border-black bg-white; }
       .panel-bar { @apply flex items-center justify-between gap-2 border-b-3 border-black px-4 py-2; }
-      .btn { @apply inline-flex min-h-11 shrink-0 items-center justify-center border-2 border-black px-4 text-sm font-bold text-black shadow-hard-sm transition-transform duration-100 hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-[3px] active:translate-y-[3px] active:shadow-none motion-reduce:transition-none; }
-      .btn:disabled { @apply translate-x-0 translate-y-0 bg-stone-200 text-stone-600 shadow-none; }
-      .btn-white { @apply bg-white; }
-      .btn-pink { @apply bg-pop-pink; }
+      .btn { @apply inline-flex min-h-11 shrink-0 items-center justify-center border-2 border-black bg-white px-4 text-sm font-bold text-black hover:bg-paper active:bg-stone-200; }
+      .btn-accent { @apply bg-accent hover:bg-yellow-300 active:bg-yellow-400; }
+      .btn:disabled { @apply bg-stone-200 text-stone-600; }
       .field-label { @apply block text-sm font-bold; }
-      .field { @apply min-h-11 w-full min-w-0 border-2 border-black bg-white px-3 text-sm placeholder:text-stone-600 focus-visible:shadow-hard-sm; }
+      .field { @apply min-h-11 w-full min-w-0 border-2 border-black bg-white px-3 text-sm placeholder:text-stone-600; }
       .hint { @apply text-xs text-stone-700; }
-      .bubble { @apply max-w-[85%] border-2 border-black px-3 py-2 shadow-hard-sm; }
-      .bubble-user { @apply bg-pop-pink; }
-      .bubble-agent { @apply bg-pop-cyan; }
+      .bubble { @apply max-w-[85%] border-2 border-black px-3 py-2; }
+      .bubble-user { @apply bg-accent; }
+      .bubble-agent { @apply bg-paper; }
 
-      .doc h3 { @apply scroll-mt-4 font-display text-2xl leading-tight; }
+      .doc h3 { @apply scroll-mt-4 text-2xl font-bold leading-tight; }
       .doc h4 { @apply mt-6 text-lg font-bold; }
       .doc p { @apply mt-3 leading-relaxed; }
       .doc ul, .doc ol { @apply mt-3 space-y-1.5 pl-5 leading-relaxed; }
       .doc ul { @apply list-disc; }
       .doc ol { @apply list-decimal; }
-      .doc a { @apply font-bold text-black underline decoration-pop-pink decoration-4 underline-offset-2 hover:bg-pop-yellow; }
-      .doc :not(pre) > code { @apply border border-black bg-cream px-1 text-[0.9em]; }
+      .doc a { @apply font-bold text-black underline decoration-2 underline-offset-2 hover:bg-accent; }
+      .doc :not(pre) > code { @apply border border-black bg-paper px-1 text-[0.9em]; }
       .doc section + section { @apply mt-12 border-t-3 border-black pt-10; }
-      .step-label { @apply inline-block bg-black px-2 py-1 text-sm font-bold text-pop-yellow; }
+      .step-label { @apply inline-block border-2 border-black bg-accent px-2 py-0.5 text-sm font-bold; }
       .code-block { @apply mt-4; }
-      .code-bar { @apply flex items-center justify-between gap-2 border-3 border-b-0 border-black bg-pop-cyan pl-3; }
+      .code-bar { @apply flex items-center justify-between gap-2 border-3 border-b-0 border-black bg-paper pl-3; }
       .code-name { @apply py-1 text-xs font-bold text-black; }
-      .copy-btn { @apply min-h-11 border-l-3 border-black bg-white px-3 text-sm font-bold hover:bg-pop-yellow active:bg-yellow-300; }
-      .code-pre { @apply overflow-x-auto border-3 border-black bg-black p-4 text-sm leading-relaxed text-white; }
-      .toc a { @apply block px-2 py-2 text-sm font-medium text-black hover:bg-pop-yellow; }
+      .copy-btn { @apply min-h-11 border-l-3 border-black bg-white px-3 text-sm font-bold hover:bg-accent active:bg-yellow-300; }
+      .code-pre { @apply overflow-x-auto border-3 border-black bg-stone-900 p-4 text-sm leading-relaxed text-stone-100; }
+      .toc a { @apply block px-2 py-2 text-sm font-medium text-black hover:bg-accent; }
     }
   </style>
 </head>
-<body class="min-h-screen bg-cream font-sans text-black">
-  <header id="app-header" class="border-b-3 border-black bg-pop-yellow">
+<body class="min-h-screen bg-paper font-sans text-black">
+  <header id="app-header" class="border-b-3 border-black bg-white">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5">
       <div class="min-w-0">
-        <h1 class="font-display text-3xl leading-none sm:text-4xl">Customer Service Agent</h1>
+        <h1 class="font-bold text-3xl leading-none sm:text-4xl">Customer Service Agent</h1>
         <p class="mt-2 text-sm font-medium">Isi API key dan konteks usaha, lalu uji pertanyaan pelanggan di kolom chat.</p>
       </div>
       <nav aria-label="Navigasi">
-        <a id="link-tutorial" href="#tutorial" class="btn btn-white">Baca tutorial</a>
+        <a id="link-tutorial" href="#tutorial" class="btn">Baca tutorial</a>
       </nav>
     </div>
   </header>
@@ -78,8 +66,8 @@
   <main id="main-content">
   <div id="app-main" class="mx-auto grid max-w-6xl scroll-mt-4 gap-6 px-4 py-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
     <section id="settings-panel" aria-labelledby="settings-title" class="panel self-start">
-      <div class="panel-bar bg-pop-cyan">
-        <h2 id="settings-title" class="font-display text-xl">Pengaturan</h2>
+      <div class="panel-bar">
+        <h2 id="settings-title" class="font-bold text-xl">Pengaturan</h2>
       </div>
 
       <div class="space-y-6 p-4">
@@ -88,7 +76,7 @@
           <div class="mt-1 flex gap-2">
             <input id="api-key" type="password" autocomplete="off" spellcheck="false"
               placeholder="Tempel API key di sini" class="field">
-            <button id="btn-toggle-key" type="button" aria-pressed="false" aria-controls="api-key" class="btn btn-white px-3">
+            <button id="btn-toggle-key" type="button" aria-pressed="false" aria-controls="api-key" class="btn px-3">
               Tampilkan
             </button>
           </div>
@@ -116,19 +104,19 @@
           <label for="pdf-input" class="field-label">Dokumen PDF</label>
           <p id="pdf-hint" class="hint mt-1">Teks PDF dibaca di browser Anda lalu ikut dikirim sebagai konteks. PDF hasil scan (berupa gambar) tidak bisa dibaca.</p>
           <input id="pdf-input" type="file" accept="application/pdf,.pdf" multiple aria-describedby="pdf-hint"
-            class="mt-2 block w-full text-sm file:mr-3 file:min-h-11 file:border-2 file:border-black file:bg-pop-yellow file:px-3 file:text-sm file:font-bold hover:file:bg-yellow-200 disabled:opacity-60">
+            class="mt-2 block w-full text-sm file:mr-3 file:min-h-11 file:border-2 file:border-black file:bg-white file:px-3 file:text-sm file:font-bold hover:file:bg-paper disabled:opacity-60">
           <p id="pdf-status" role="status" aria-live="polite" class="mt-2 text-sm"></p>
           <ul id="pdf-list" class="mt-2 space-y-2"></ul>
         </div>
 
-        <p id="context-size" class="border-2 border-black bg-cream p-3 text-sm"></p>
+        <p id="context-size" class="border-2 border-black bg-paper p-3 text-sm"></p>
       </div>
     </section>
 
     <section id="chat-panel" aria-labelledby="chat-title" class="panel flex h-[36rem] flex-col lg:h-[calc(100dvh-10rem)] lg:min-h-[32rem]">
-      <div class="panel-bar bg-pop-yellow">
-        <h2 id="chat-title" class="font-display text-xl">Chat</h2>
-        <button id="btn-clear-chat" type="button" class="btn btn-white">
+      <div class="panel-bar">
+        <h2 id="chat-title" class="font-bold text-xl">Chat</h2>
+        <button id="btn-clear-chat" type="button" class="btn">
           Hapus percakapan
         </button>
       </div>
@@ -142,7 +130,7 @@
           <textarea id="chat-input" rows="2" aria-describedby="chat-input-hint"
             placeholder="Contoh: Jam berapa toko buka hari Minggu?"
             class="field resize-none p-3"></textarea>
-          <button id="btn-send" type="submit" class="btn btn-pink">
+          <button id="btn-send" type="submit" class="btn btn-accent">
             Kirim
           </button>
         </div>
@@ -152,12 +140,12 @@
   </div>
 
   <section id="tutorial" aria-labelledby="tutorial-title" class="mx-auto max-w-6xl scroll-mt-4 px-4 pt-6 pb-10">
-    <div class="panel flex flex-wrap items-end justify-between gap-4 bg-pop-pink p-5">
+    <div class="panel flex flex-wrap items-end justify-between gap-4 p-5">
       <div class="min-w-0">
-        <h2 id="tutorial-title" class="font-display text-3xl leading-none sm:text-4xl">Tutorial: Membuat Customer Service Agent</h2>
+        <h2 id="tutorial-title" class="font-bold text-3xl leading-none sm:text-4xl">Tutorial: Membuat Customer Service Agent</h2>
         <p class="mt-2 text-sm font-medium">Panduan untuk siswa SMK kelas 11. Cukup HTML, Tailwind, dan JavaScript.</p>
       </div>
-      <a id="link-back-to-app" href="#app-main" class="btn btn-white">Kembali ke aplikasi</a>
+      <a id="link-back-to-app" href="#app-main" class="btn">Kembali ke aplikasi</a>
     </div>
 
     <div class="mt-8 grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
@@ -181,7 +169,7 @@
         </ol>
       </details>
       <div class="panel hidden p-2 lg:block">
-        <p class="px-2 pt-1 font-display text-lg">Daftar isi</p>
+        <p class="px-2 pt-1 font-bold text-lg">Daftar isi</p>
         <ol class="mt-2 space-y-0.5">
           <li><a href="#tentang">Apa yang akan kamu buat</a></li>
           <li><a href="#persiapan">Persiapan</a></li>
@@ -266,26 +254,20 @@
   placeholder="Tempel API key di sini" class="field"&gt;</code></pre>
         </div>
         <p><code>type="password"</code> menyembunyikan isi key di layar.</p>
-        <h4>Gaya neo-brutalism: token dan komponen</h4>
-        <p>Tampilan aplikasi memakai gaya neo-brutalism: garis hitam tebal, bayangan keras tanpa blur, sudut siku, dan warna cerah. Setiap warna punya tugas. Kuning untuk header dan navigasi, pink untuk pelanggan dan tombol Kirim, cyan untuk agent dan pengaturan.</p>
-        <p>Warna, huruf, dan bayangan ditulis sekali sebagai token di blok <code>@theme</code>, di dalam tag <code>&lt;style type="text/tailwindcss"&gt;</code>. Dari token itu Tailwind membuat class seperti <code>bg-pop-pink</code>, <code>font-display</code>, dan <code>shadow-hard</code>.</p>
+        <h4>Gaya tampilan: token dan komponen</h4>
+        <p>Ciri tampilan aplikasi ini ada di garisnya: garis hitam tebal dengan sudut siku. Warnanya sengaja dibatasi, yaitu hitam, putih, warna kertas untuk latar, dan satu aksen kuning untuk hal yang paling penting: tombol Kirim, pesan pelanggan, dan peringatan.</p>
+        <p>Warna ditulis sekali sebagai token di blok <code>@theme</code>, di dalam tag <code>&lt;style type="text/tailwindcss"&gt;</code>. Dari token itu Tailwind membuat class seperti <code>bg-accent</code> dan <code>bg-paper</code>.</p>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">index.html, bagian style</span><button type="button" class="copy-btn" data-copy="code-theme">Salin</button></div>
           <pre class="code-pre"><code id="code-theme">@theme {
-  --color-pop-yellow: #ffe14d;
-  --color-pop-pink: #ff8fc7;
-  --color-pop-cyan: #6fe3f5;
-  --color-cream: #fff6dc;
-  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Archivo Black", "Archivo", ui-sans-serif, system-ui, sans-serif;
-  --shadow-hard: 6px 6px 0 0 #000;
-  --shadow-hard-sm: 3px 3px 0 0 #000;
+  --color-accent: #ffe14d;
+  --color-paper: #f5f4ef;
 }</code></pre>
         </div>
         <p>Deretan class yang dipakai berulang digabung menjadi satu class komponen dengan <code>@apply</code>. Contohnya class <code>field</code> yang dipakai semua kolom isian. Di dalamnya, <code>min-h-11</code> membuat tinggi kolom 44 piksel, ukuran yang nyaman disentuh jari.</p>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">index.html, bagian style</span><button type="button" class="copy-btn" data-copy="code-field">Salin</button></div>
-          <pre class="code-pre"><code id="code-field">.field { @apply min-h-11 w-full min-w-0 border-2 border-black bg-white px-3 text-sm placeholder:text-stone-600 focus-visible:shadow-hard-sm; }</code></pre>
+          <pre class="code-pre"><code id="code-field">.field { @apply min-h-11 w-full min-w-0 border-2 border-black bg-white px-3 text-sm placeholder:text-stone-600; }</code></pre>
         </div>
         <p>Pada elemen pembungkus kedua panel (<code>id="app-main"</code>), class <code>lg:grid-cols-[22rem_minmax(0,1fr)]</code> membuat dua kolom mulai layar lebar. Awalan <code>lg:</code> berarti aturan itu baru berlaku di layar 1024 piksel ke atas, sehingga di HP halaman tetap satu kolom.</p>
         <p>Semua kode JavaScript ditulis di dalam satu tag <code>&lt;script&gt;</code> di akhir <code>&lt;body&gt;</code>, masih di file <code>index.html</code>. Saat script berjalan, semua elemen HTML di atasnya sudah ada, jadi <code>document.getElementById</code> bisa menemukannya.</p>
@@ -597,10 +579,10 @@ Buku bisa ditukar maksimal 3 hari setelah diterima, wajib membawa nota.</code></
   </section>
   </main>
 
-  <footer id="app-footer" class="on-dark border-t-3 border-black bg-black text-white">
+  <footer id="app-footer" class="border-t-3 border-black bg-white">
     <div class="mx-auto max-w-6xl space-y-2 px-4 py-6 text-sm">
       <p>Contoh project belajar: HTML, Tailwind, dan JavaScript tanpa server. API key tersimpan di browser, jadi jangan pakai pola ini untuk website publik.</p>
-      <p>Referensi: <a class="font-bold text-pop-yellow underline underline-offset-2" href="https://netra.sh/docs/">dokumentasi Netra</a>, <a class="font-bold text-pop-yellow underline underline-offset-2" href="https://mozilla.github.io/pdf.js/">pdf.js</a>, dan <a class="font-bold text-pop-yellow underline underline-offset-2" href="https://tailwindcss.com/docs">dokumentasi Tailwind CSS</a>.</p>
+      <p>Referensi: <a class="font-bold underline decoration-2 underline-offset-2 hover:bg-accent" href="https://netra.sh/docs/">dokumentasi Netra</a>, <a class="font-bold underline decoration-2 underline-offset-2 hover:bg-accent" href="https://mozilla.github.io/pdf.js/">pdf.js</a>, dan <a class="font-bold underline decoration-2 underline-offset-2 hover:bg-accent" href="https://tailwindcss.com/docs">dokumentasi Tailwind CSS</a>.</p>
     </div>
   </footer>
 
@@ -791,7 +773,7 @@ function renderDocuments() {
 
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
-    removeButton.className = 'btn btn-white px-3';
+    removeButton.className = 'btn px-3';
     removeButton.textContent = 'Hapus';
     removeButton.setAttribute('aria-label', `Hapus dokumen ${doc.name}`);
     removeButton.addEventListener('click', () => {
@@ -822,13 +804,13 @@ function updateContextSize() {
   const total = buildContext().length;
 
   if (total === 0) {
-    el.contextSize.className = 'border-2 border-black bg-cream p-3 text-sm';
+    el.contextSize.className = 'border-2 border-black bg-paper p-3 text-sm';
     el.contextSize.textContent = 'Belum ada konteks. Agent akan menjawab bahwa ia belum punya informasi usaha Anda.';
   } else if (total > MAX_CONTEXT_CHARS) {
-    el.contextSize.className = 'border-2 border-black bg-pop-yellow p-3 text-sm font-bold';
+    el.contextSize.className = 'border-2 border-black bg-accent p-3 text-sm font-bold';
     el.contextSize.textContent = `Konteks ${formatNumber(total)} karakter, melebihi batas ${formatNumber(MAX_CONTEXT_CHARS)}. Bagian akhir akan dipotong. Hapus PDF yang tidak perlu agar semua info terbaca.`;
   } else {
-    el.contextSize.className = 'border-2 border-black bg-cream p-3 text-sm';
+    el.contextSize.className = 'border-2 border-black bg-paper p-3 text-sm';
     el.contextSize.textContent = `Konteks yang dikirim: ${formatNumber(total)} dari ${formatNumber(MAX_CONTEXT_CHARS)} karakter.`;
   }
 }
@@ -916,7 +898,7 @@ function renderMessages() {
   if (state.history.length === 0 && !state.isSending && !state.error) {
     const empty = document.createElement('div');
     empty.className = 'mx-auto mt-6 max-w-sm border-2 border-dashed border-black p-6 text-center text-sm';
-    empty.innerHTML = '<p class="font-display text-lg">Belum ada percakapan</p>'
+    empty.innerHTML = '<p class="font-bold text-lg">Belum ada percakapan</p>'
       + '<p class="mt-1">Isi API key dan konteks di panel Pengaturan, lalu kirim pertanyaan seolah-olah Anda pelanggan.</p>';
     el.chatMessages.append(empty);
   }
@@ -927,14 +909,14 @@ function renderMessages() {
 
   if (state.isSending) {
     const loading = document.createElement('p');
-    loading.className = 'inline-block border-2 border-black bg-pop-yellow px-3 py-2 text-sm font-bold';
+    loading.className = 'inline-block border-2 border-black bg-paper px-3 py-2 text-sm font-bold';
     loading.textContent = 'Agent sedang menulis jawaban...';
     el.chatMessages.append(loading);
   }
 
   if (state.error) {
     const error = document.createElement('div');
-    error.className = 'border-2 border-black bg-red-300 p-3 text-sm font-bold';
+    error.className = 'border-2 border-black bg-red-100 p-3 text-sm font-bold';
     error.textContent = state.error;
     el.chatMessages.append(error);
   }
