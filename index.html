@@ -40,6 +40,8 @@
       .doc a { @apply font-bold text-black underline decoration-2 underline-offset-2 hover:bg-accent; }
       .doc :not(pre) > code { @apply border border-black bg-paper px-1 text-[0.9em]; }
       .doc section + section { @apply mt-12 border-t-3 border-black pt-10; }
+      .doc .tier { @apply mt-12 border-3 border-black bg-paper p-5; }
+      .doc .tier + section { @apply mt-8 border-t-0 pt-0; }
       .step-label { @apply inline-block border-2 border-black bg-accent px-2 py-0.5 text-sm font-bold; }
       .code-block { @apply mt-4; }
       .code-bar { @apply flex items-center justify-between gap-2 border-3 border-b-0 border-black bg-paper pl-3; }
@@ -149,20 +151,25 @@
     </div>
 
     <div class="mt-8 grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
-    <nav id="toc" aria-label="Daftar isi" class="toc lg:sticky lg:top-4 lg:self-start">
+    <nav id="toc" aria-label="Daftar isi" class="toc lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto">
       <details class="panel lg:hidden">
         <summary class="flex min-h-11 items-center px-4 text-sm font-bold">Daftar isi</summary>
         <ol class="space-y-0.5 px-2 pb-2">
           <li><a href="#tentang">Apa yang akan kamu buat</a></li>
           <li><a href="#persiapan">Persiapan</a></li>
           <li><a href="#struktur">Struktur file dan alur data</a></li>
-          <li><a href="#langkah-1">Langkah 1: Tampilan</a></li>
-          <li><a href="#langkah-2">Langkah 2: State dan elemen</a></li>
-          <li><a href="#langkah-3">Langkah 3: Membaca PDF</a></li>
-          <li><a href="#langkah-4">Langkah 4: Konteks dan system prompt</a></li>
-          <li><a href="#langkah-5">Langkah 5: Memanggil API</a></li>
-          <li><a href="#langkah-6">Langkah 6: Menampilkan chat</a></li>
-          <li><a href="#mencoba">Mencoba aplikasi</a></li>
+          <li><a class="font-bold" href="#tingkat-1">Tingkat 1: Konteks teks</a></li>
+          <li class="pl-3"><a href="#langkah-1">Langkah 1: Tampilan</a></li>
+          <li class="pl-3"><a href="#langkah-2">Langkah 2: State dan elemen</a></li>
+          <li class="pl-3"><a href="#langkah-3">Langkah 3: Konteks dan system prompt</a></li>
+          <li class="pl-3"><a href="#langkah-4">Langkah 4: Memanggil API</a></li>
+          <li class="pl-3"><a href="#langkah-5">Langkah 5: Menampilkan chat</a></li>
+          <li class="pl-3"><a href="#mencoba-1">Mencoba Tingkat 1</a></li>
+          <li><a class="font-bold" href="#tingkat-2">Tingkat 2: Konteks PDF</a></li>
+          <li class="pl-3"><a href="#langkah-6">Langkah 6: Kolom PDF</a></li>
+          <li class="pl-3"><a href="#langkah-7">Langkah 7: Membaca PDF</a></li>
+          <li class="pl-3"><a href="#langkah-8">Langkah 8: Menggabungkan konteks</a></li>
+          <li class="pl-3"><a href="#mencoba-2">Mencoba Tingkat 2</a></li>
           <li><a href="#masalah">Masalah yang sering muncul</a></li>
           <li><a href="#keamanan">Catatan keamanan</a></li>
           <li><a href="#latihan">Latihan</a></li>
@@ -174,13 +181,18 @@
           <li><a href="#tentang">Apa yang akan kamu buat</a></li>
           <li><a href="#persiapan">Persiapan</a></li>
           <li><a href="#struktur">Struktur file dan alur data</a></li>
-          <li><a href="#langkah-1">Langkah 1: Tampilan</a></li>
-          <li><a href="#langkah-2">Langkah 2: State dan elemen</a></li>
-          <li><a href="#langkah-3">Langkah 3: Membaca PDF</a></li>
-          <li><a href="#langkah-4">Langkah 4: Konteks dan system prompt</a></li>
-          <li><a href="#langkah-5">Langkah 5: Memanggil API</a></li>
-          <li><a href="#langkah-6">Langkah 6: Menampilkan chat</a></li>
-          <li><a href="#mencoba">Mencoba aplikasi</a></li>
+          <li><a class="font-bold" href="#tingkat-1">Tingkat 1: Konteks teks</a></li>
+          <li class="pl-3"><a href="#langkah-1">Langkah 1: Tampilan</a></li>
+          <li class="pl-3"><a href="#langkah-2">Langkah 2: State dan elemen</a></li>
+          <li class="pl-3"><a href="#langkah-3">Langkah 3: Konteks dan system prompt</a></li>
+          <li class="pl-3"><a href="#langkah-4">Langkah 4: Memanggil API</a></li>
+          <li class="pl-3"><a href="#langkah-5">Langkah 5: Menampilkan chat</a></li>
+          <li class="pl-3"><a href="#mencoba-1">Mencoba Tingkat 1</a></li>
+          <li><a class="font-bold" href="#tingkat-2">Tingkat 2: Konteks PDF</a></li>
+          <li class="pl-3"><a href="#langkah-6">Langkah 6: Kolom PDF</a></li>
+          <li class="pl-3"><a href="#langkah-7">Langkah 7: Membaca PDF</a></li>
+          <li class="pl-3"><a href="#langkah-8">Langkah 8: Menggabungkan konteks</a></li>
+          <li class="pl-3"><a href="#mencoba-2">Mencoba Tingkat 2</a></li>
           <li><a href="#masalah">Masalah yang sering muncul</a></li>
           <li><a href="#keamanan">Catatan keamanan</a></li>
           <li><a href="#latihan">Latihan</a></li>
@@ -191,15 +203,13 @@
     <article id="tutorial-content" class="doc panel min-w-0 p-5 sm:p-8">
       <section id="tentang" aria-labelledby="tentang-title">
         <h3 id="tentang-title">Apa yang akan kamu buat</h3>
-        <p>Bayangkan sebuah toko online yang setiap hari ditanya hal yang sama: jam buka, ongkir, cara retur. Di tutorial ini kamu membuat petugas customer service otomatis. Pemilik toko menulis informasi usahanya atau mengunggah PDF, lalu AI menjawab pertanyaan pelanggan hanya dari informasi itu.</p>
-        <p>Selama mengerjakannya, kamu belajar:</p>
+        <p>Bayangkan sebuah toko online yang setiap hari ditanya hal yang sama: jam buka, ongkir, cara retur. Di tutorial ini kamu membuat petugas customer service otomatis. Pemilik toko menulis informasi usahanya, lalu AI menjawab pertanyaan pelanggan hanya dari informasi itu.</p>
+        <p>Tutorial dibagi menjadi dua tingkat:</p>
         <ul>
-          <li>menata halaman dengan class Tailwind tanpa proses build;</li>
-          <li>membaca teks dari file PDF langsung di browser;</li>
-          <li>menulis system prompt, yaitu aturan kerja untuk AI;</li>
-          <li>mengirim permintaan ke API dengan <code>fetch</code> dan menangani error-nya;</li>
-          <li>menampilkan keadaan layar kosong, sedang memuat, dan error.</li>
+          <li>Tingkat 1 (dasar): agent menjawab dari konteks teks yang diketik pemilik toko. Kamu belajar menata halaman dengan Tailwind, menulis system prompt, memanggil API dengan <code>fetch</code>, dan menampilkan keadaan layar kosong, memuat, dan error.</li>
+          <li>Tingkat 2 (lanjutan): agent juga bisa membaca dokumen PDF. Kamu belajar memakai library pdf.js untuk mengambil teks dari file PDF langsung di browser.</li>
         </ul>
+        <p>Selesaikan Tingkat 1 sampai aplikasinya bisa menjawab, baru lanjut ke Tingkat 2. Aplikasi di bagian atas halaman ini sudah lengkap sampai Tingkat 2, jadi hasil akhirnya bisa kamu lihat kapan saja.</p>
       </section>
 
       <section id="persiapan" aria-labelledby="persiapan-title">
@@ -207,7 +217,7 @@
         <ul>
           <li>Browser Chrome atau Edge versi terbaru.</li>
           <li>Teks editor, misalnya VS Code. Ekstensi Live Server boleh dipakai, tapi tidak wajib.</li>
-          <li>Koneksi internet, karena Tailwind, pembaca PDF, dan API dimuat dari internet.</li>
+          <li>Koneksi internet, karena Tailwind, API, dan pembaca PDF di Tingkat 2 dimuat dari internet.</li>
           <li>API key Netra.</li>
         </ul>
         <h4>Cara mendapatkan API key Netra</h4>
@@ -227,20 +237,27 @@
 ├── index.html     aplikasi dan tutorial ini, HTML dan JavaScript dalam satu file
 └── README.md      ringkasan cara menjalankan</code></pre>
         </div>
-        <h4>Alur data</h4>
+        <h4>Alur data di Tingkat 1</h4>
         <ol>
-          <li>Pemilik toko mengisi konteks teks dan/atau mengunggah PDF.</li>
-          <li>Script di <code>index.html</code> menggabungkan semuanya menjadi satu konteks, lalu memasukkannya ke system prompt.</li>
+          <li>Pemilik toko menulis informasi usaha di kolom Konteks teks.</li>
+          <li>Script di <code>index.html</code> menyusun system prompt berisi aturan kerja dan konteks itu.</li>
           <li>Saat pelanggan bertanya, script mengirim system prompt beserta riwayat chat ke API Netra.</li>
           <li>Netra menjalankan model AI dan mengembalikan jawaban.</li>
           <li>Script menampilkan jawaban itu sebagai gelembung chat.</li>
         </ol>
+        <p>Tingkat 2 menambah satu tahap sebelum tahap kedua: teks dari PDF dibaca, lalu digabung dengan konteks teks.</p>
+      </section>
+
+      <section id="tingkat-1" aria-labelledby="tingkat-1-title" class="tier">
+        <p class="step-label">Tingkat 1: Dasar</p>
+        <h3 id="tingkat-1-title">Customer service dengan konteks teks</h3>
+        <p>Di tingkat ini agent hanya membaca konteks dari kolom Konteks teks. Panel Pengaturan cukup berisi API key, model, dan konteks teks. Kolom PDF baru ditambahkan di Tingkat 2.</p>
       </section>
 
       <section id="langkah-1" aria-labelledby="langkah-1-title">
         <p class="step-label">Langkah 1</p>
         <h3 id="langkah-1-title">Membuat tampilan di index.html</h3>
-        <p>Halaman dibagi menjadi dua panel: Pengaturan di kiri dan Chat di kanan. Di layar HP, kedua panel bertumpuk ke bawah.</p>
+        <p>Halaman dibagi menjadi dua panel: Pengaturan di kiri dan Chat di kanan. Di layar HP, kedua panel bertumpuk ke bawah. Untuk Tingkat 1, panel Pengaturan berisi kolom API key, Model, dan Konteks teks.</p>
         <p>Tailwind dipasang dengan satu tag script. Versi browser ini membaca class di HTML lalu membuat CSS-nya saat halaman dibuka, jadi kamu tidak perlu menjalankan npm.</p>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">index.html</span><button type="button" class="copy-btn" data-copy="code-tailwind">Salin</button></div>
@@ -278,9 +295,8 @@
         <h3 id="langkah-2-title">Menyimpan state dan mengambil elemen</h3>
         <p>Semua data aplikasi disimpan di satu objek bernama <code>state</code>. Setiap kali state berubah, tampilan digambar ulang dari state. Kalau tampilan terlihat salah, cukup periksa isi state-nya.</p>
         <div class="code-block">
-          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-state">Salin</button></div>
-          <pre class="code-pre"><code id="code-state">const state = {
-  documents: [], // { name, pages, text }
+          <div class="code-bar"><span class="code-name">index.html, bagian script (versi Tingkat 1)</span><button type="button" class="copy-btn" data-copy="code-state-1">Salin</button></div>
+          <pre class="code-pre"><code id="code-state-1">const state = {
   history: [], // { role: 'user' | 'assistant', content }
   isSending: false,
   error: '',
@@ -288,11 +304,10 @@
         </div>
         <p>Elemen HTML yang sering dipakai diambil sekali di awal, lalu disimpan di objek <code>el</code>. Potongan di bawah hanya sebagian, versi lengkapnya ada di bagian script <code>index.html</code>.</p>
         <div class="code-block">
-          <div class="code-bar"><span class="code-name">index.html, bagian script (potongan)</span><button type="button" class="copy-btn" data-copy="code-el">Salin</button></div>
+          <div class="code-bar"><span class="code-name">index.html, bagian script (potongan, versi Tingkat 1)</span><button type="button" class="copy-btn" data-copy="code-el">Salin</button></div>
           <pre class="code-pre"><code id="code-el">const el = {
   apiKey: document.getElementById('api-key'),
   contextText: document.getElementById('context-text'),
-  pdfInput: document.getElementById('pdf-input'),
   chatMessages: document.getElementById('chat-messages'),
   chatForm: document.getElementById('chat-form'),
   chatInput: document.getElementById('chat-input'),
@@ -302,69 +317,13 @@
 
       <section id="langkah-3" aria-labelledby="langkah-3-title">
         <p class="step-label">Langkah 3</p>
-        <h3 id="langkah-3-title">Membaca PDF dengan pdf.js</h3>
-        <p>JavaScript di browser tidak bisa langsung mengambil teks dari file PDF. Untuk itu kita memakai <a href="https://mozilla.github.io/pdf.js/">pdf.js</a>, library pembaca PDF buatan Mozilla. Ukurannya cukup besar, jadi library ini baru diunduh saat pengguna memilih PDF untuk pertama kali.</p>
+        <h3 id="langkah-3-title">Menyusun konteks dan system prompt</h3>
+        <p>Di Tingkat 1, konteks cukup diambil dari kolom Konteks teks. Teksnya diberi label <code>[Catatan teks]</code> supaya AI tahu dari mana informasi itu berasal.</p>
         <div class="code-block">
-          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-loadpdf">Salin</button></div>
-          <pre class="code-pre"><code id="code-loadpdf">let pdfjsPromise = null;
-
-// pdf.js baru diunduh saat pertama kali ada PDF, jadi halaman awal tetap ringan.
-function loadPdfJs() {
-  if (!pdfjsPromise) {
-    pdfjsPromise = import(PDFJS_URL)
-      .then((pdfjsLib) => {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
-        return pdfjsLib;
-      })
-      .catch((error) => {
-        pdfjsPromise = null; // supaya bisa dicoba lagi setelah internet kembali
-        throw error;
-      });
-  }
-  return pdfjsPromise;
-}</code></pre>
-        </div>
-        <p>Setelah library siap, teks dibaca halaman demi halaman:</p>
-        <div class="code-block">
-          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-extract">Salin</button></div>
-          <pre class="code-pre"><code id="code-extract">async function extractPdfText(file) {
-  const pdfjsLib = await loadPdfJs();
-  const data = new Uint8Array(await file.arrayBuffer());
-  const pdf = await pdfjsLib.getDocument({ data }).promise;
-  const pageCount = pdf.numPages;
-  const pageTexts = [];
-
-  for (let pageNumber = 1; pageNumber &lt;= pageCount; pageNumber++) {
-    const page = await pdf.getPage(pageNumber);
-    const content = await page.getTextContent();
-    // hasEOL menandai akhir baris di PDF, jadi baris asli tetap terjaga.
-    const text = content.items.map((item) =&gt; item.str + (item.hasEOL ? '\n' : ' ')).join('');
-    pageTexts.push(text.trim());
-  }
-
-  await pdf.destroy();
-  const text = pageTexts.join('\n\n').replace(/[ \t]+/g, ' ').trim();
-  return { pages: pageCount, text };
-}</code></pre>
-        </div>
-        <p>Isi setiap halaman berupa potongan teks kecil (<code>item.str</code>) yang kita sambung satu per satu. Kalau <code>item.hasEOL</code> bernilai <code>true</code>, baris di PDF berakhir di situ, jadi kita tambahkan baris baru.</p>
-        <p>PDF hasil scan berisi gambar, bukan teks, sehingga hasilnya kosong. Aplikasi menolak file seperti itu dan menulis alasannya di bawah tombol pilih file.</p>
-      </section>
-
-      <section id="langkah-4" aria-labelledby="langkah-4-title">
-        <p class="step-label">Langkah 4</p>
-        <h3 id="langkah-4-title">Menyusun konteks dan system prompt</h3>
-        <p>Konteks teks dan teks dari semua PDF digabung menjadi satu string. Setiap bagian diberi label, supaya AI tahu dari mana sebuah informasi berasal.</p>
-        <div class="code-block">
-          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-context">Salin</button></div>
-          <pre class="code-pre"><code id="code-context">function buildContext() {
-  const parts = [];
+          <div class="code-bar"><span class="code-name">index.html, bagian script (versi Tingkat 1)</span><button type="button" class="copy-btn" data-copy="code-context-1">Salin</button></div>
+          <pre class="code-pre"><code id="code-context-1">function buildContext() {
   const text = el.contextText.value.trim();
-  if (text) parts.push(`[Catatan teks]\n${text}`);
-  for (const doc of state.documents) {
-    parts.push(`[Dokumen: ${doc.name}]\n${doc.text}`);
-  }
-  return parts.join('\n\n');
+  return text ? `[Catatan teks]\n${text}` : '';
 }</code></pre>
         </div>
         <p>System prompt adalah pesan pertama dengan role <code>system</code>. Pelanggan tidak melihatnya, tetapi AI mengikutinya sebagai aturan kerja.</p>
@@ -387,9 +346,9 @@ function loadPdfJs() {
         <p>Konteks dipotong di 60.000 karakter (<code>MAX_CONTEXT_CHARS</code>). Makin panjang konteks, makin banyak token yang dipakai, dan makin besar biayanya.</p>
       </section>
 
-      <section id="langkah-5" aria-labelledby="langkah-5-title">
-        <p class="step-label">Langkah 5</p>
-        <h3 id="langkah-5-title">Memanggil API Netra</h3>
+      <section id="langkah-4" aria-labelledby="langkah-4-title">
+        <p class="step-label">Langkah 4</p>
+        <h3 id="langkah-4-title">Memanggil API Netra</h3>
         <p>Contoh dari Netra memakai perintah curl di terminal:</p>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">terminal</span><button type="button" class="copy-btn" data-copy="code-curl">Salin</button></div>
@@ -445,9 +404,9 @@ function loadPdfJs() {
         <p>Teks hasil berpikir model dikirim terpisah di <code>choices[0].message.reasoning</code>. Aplikasi ini hanya menampilkan <code>content</code>, yaitu jawaban untuk pelanggan.</p>
       </section>
 
-      <section id="langkah-6" aria-labelledby="langkah-6-title">
-        <p class="step-label">Langkah 6</p>
-        <h3 id="langkah-6-title">Menampilkan chat</h3>
+      <section id="langkah-5" aria-labelledby="langkah-5-title">
+        <p class="step-label">Langkah 5</p>
+        <h3 id="langkah-5-title">Menampilkan chat</h3>
         <p>Setiap pesan dibuat dengan <code>document.createElement</code>, lalu teksnya dimasukkan lewat <code>textContent</code>.</p>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-bubble">Salin</button></div>
@@ -473,7 +432,7 @@ function loadPdfJs() {
 }</code></pre>
         </div>
         <h4>Kenapa textContent, bukan innerHTML?</h4>
-        <p>Jawaban AI dan nama file PDF bisa saja berisi teks seperti <code>&lt;img src=x onerror=alert(1)&gt;</code>. Kalau dimasukkan lewat <code>innerHTML</code>, browser menganggapnya HTML dan menjalankan kodenya. Lewat <code>textContent</code>, teks itu tampil apa adanya. Kebiasaan ini mencegah serangan yang disebut XSS (cross-site scripting).</p>
+        <p>Jawaban AI bisa saja berisi teks seperti <code>&lt;img src=x onerror=alert(1)&gt;</code>. Kalau dimasukkan lewat <code>innerHTML</code>, browser menganggapnya HTML dan menjalankan kodenya. Lewat <code>textContent</code>, teks itu tampil apa adanya. Kebiasaan ini mencegah serangan yang disebut XSS (cross-site scripting). Di Tingkat 2, nama file PDF juga ditampilkan dengan cara yang sama.</p>
         <h4>Tiga keadaan layar</h4>
         <ul>
           <li>Kosong: belum ada percakapan, jadi panel chat menampilkan petunjuk cara mulai.</li>
@@ -483,14 +442,13 @@ function loadPdfJs() {
         <p>Ketiganya diatur fungsi <code>renderMessages</code> yang membaca <code>state.history</code>, <code>state.isSending</code>, dan <code>state.error</code>.</p>
       </section>
 
-      <section id="mencoba" aria-labelledby="mencoba-title">
-        <h3 id="mencoba-title">Mencoba aplikasi</h3>
+      <section id="mencoba-1" aria-labelledby="mencoba-1-title">
+        <h3 id="mencoba-1-title">Mencoba Tingkat 1</h3>
         <ol>
           <li>Kembali ke <a href="#app-main">aplikasi di bagian atas halaman ini</a>, lalu tempel API key.</li>
           <li>Salin contoh konteks di bawah ke kolom Konteks teks. Isinya data latihan, bukan toko sungguhan.</li>
           <li>Tanyakan "Hari Minggu buka tidak?". Agent seharusnya menjawab bahwa toko tutup.</li>
           <li>Tanyakan "Ada diskon untuk pelajar?". Info itu tidak ada di konteks, jadi agent seharusnya bilang belum punya informasinya dan menyarankan menghubungi admin.</li>
-          <li>Unggah PDF yang berisi teks, misalnya daftar harga, lalu tanyakan isinya.</li>
         </ol>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">contoh konteks</span><button type="button" class="copy-btn" data-copy="code-sample">Salin</button></div>
@@ -498,12 +456,126 @@ function loadPdfJs() {
 Ongkir dalam kota Rp10.000. Gratis ongkir untuk belanja di atas Rp200.000.
 Buku bisa ditukar maksimal 3 hari setelah diterima, wajib membawa nota.</code></pre>
         </div>
-        <p>Jawaban AI bisa sedikit berbeda setiap kali dicoba. Yang perlu kamu periksa: isinya sesuai konteks dan tidak mengarang.</p>
+        <p>Jawaban AI bisa sedikit berbeda setiap kali dicoba. Yang perlu kamu periksa: isinya sesuai konteks dan tidak mengarang. Kalau kedua pertanyaan di atas sudah dijawab dengan benar, Tingkat 1 selesai.</p>
+      </section>
+
+      <section id="tingkat-2" aria-labelledby="tingkat-2-title" class="tier">
+        <p class="step-label">Tingkat 2: Lanjutan</p>
+        <h3 id="tingkat-2-title">Menambahkan konteks dari dokumen PDF</h3>
+        <p>Di tingkat ini pemilik toko bisa mengunggah PDF, misalnya daftar harga atau FAQ, dan teksnya ikut menjadi konteks. Bagian ini lebih menantang: kamu memakai library tambahan, menunggu beberapa proses asynchronous secara berurutan, dan menangani file yang tidak bisa dibaca.</p>
+        <p>Pastikan aplikasi Tingkat 1 sudah bisa menjawab sebelum mulai.</p>
+      </section>
+
+      <section id="langkah-6" aria-labelledby="langkah-6-title">
+        <p class="step-label">Langkah 6</p>
+        <h3 id="langkah-6-title">Menambah kolom PDF dan state dokumen</h3>
+        <p>Tambahkan input file di panel Pengaturan, di bawah Konteks teks. Atribut <code>accept</code> membatasi pilihan ke file PDF, dan <code>multiple</code> membolehkan beberapa file sekaligus.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html (disederhanakan)</span><button type="button" class="copy-btn" data-copy="code-pdf-input">Salin</button></div>
+          <pre class="code-pre"><code id="code-pdf-input">&lt;label for="pdf-input" class="field-label"&gt;Dokumen PDF&lt;/label&gt;
+&lt;input id="pdf-input" type="file" accept="application/pdf,.pdf" multiple&gt;
+&lt;p id="pdf-status" role="status" aria-live="polite"&gt;&lt;/p&gt;
+&lt;ul id="pdf-list"&gt;&lt;/ul&gt;</code></pre>
+        </div>
+        <p><code>pdf-status</code> menampilkan hasil membaca file, misalnya berapa PDF yang berhasil dibaca. <code>role="status"</code> membuat pesan itu ikut dibacakan pembaca layar. <code>pdf-list</code> berisi daftar PDF yang sudah masuk, masing-masing dengan tombol Hapus.</p>
+        <p>State mendapat satu isian baru, <code>documents</code>. Setiap PDF yang berhasil dibaca disimpan di sini. Jangan lupa tambahkan juga <code>pdfInput: document.getElementById('pdf-input')</code> ke objek <code>el</code>.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-state">Salin</button></div>
+          <pre class="code-pre"><code id="code-state">const state = {
+  documents: [], // { name, pages, text }
+  history: [], // { role: 'user' | 'assistant', content }
+  isSending: false,
+  error: '',
+};</code></pre>
+        </div>
+      </section>
+
+      <section id="langkah-7" aria-labelledby="langkah-7-title">
+        <p class="step-label">Langkah 7</p>
+        <h3 id="langkah-7-title">Membaca PDF dengan pdf.js</h3>
+        <p>JavaScript di browser tidak bisa langsung mengambil teks dari file PDF. Untuk itu kita memakai <a href="https://mozilla.github.io/pdf.js/">pdf.js</a>, library pembaca PDF buatan Mozilla. Ukurannya cukup besar, jadi library ini baru diunduh saat pengguna memilih PDF untuk pertama kali.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-loadpdf">Salin</button></div>
+          <pre class="code-pre"><code id="code-loadpdf">let pdfjsPromise = null;
+
+// pdf.js baru diunduh saat pertama kali ada PDF, jadi halaman awal tetap ringan.
+function loadPdfJs() {
+  if (!pdfjsPromise) {
+    pdfjsPromise = import(PDFJS_URL)
+      .then((pdfjsLib) => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+        return pdfjsLib;
+      })
+      .catch((error) => {
+        pdfjsPromise = null; // supaya bisa dicoba lagi setelah internet kembali
+        throw error;
+      });
+  }
+  return pdfjsPromise;
+}</code></pre>
+        </div>
+        <p>Setelah library siap, teks dibaca halaman demi halaman:</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-extract">Salin</button></div>
+          <pre class="code-pre"><code id="code-extract">async function extractPdfText(file) {
+  const pdfjsLib = await loadPdfJs();
+  const data = new Uint8Array(await file.arrayBuffer());
+  const pdf = await pdfjsLib.getDocument({ data }).promise;
+  const pageCount = pdf.numPages;
+  const pageTexts = [];
+
+  for (let pageNumber = 1; pageNumber &lt;= pageCount; pageNumber++) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    // hasEOL menandai akhir baris di PDF, jadi baris asli tetap terjaga.
+    const text = content.items.map((item) =&gt; item.str + (item.hasEOL ? '\n' : ' ')).join('');
+    pageTexts.push(text.trim());
+  }
+
+  await pdf.destroy();
+  const text = pageTexts.join('\n\n').replace(/[ \t]+/g, ' ').trim();
+  return { pages: pageCount, text };
+}</code></pre>
+        </div>
+        <p>Perhatikan kata <code>await</code> yang muncul berkali-kali. Membaca file, membuka PDF, dan mengambil teks tiap halaman butuh waktu, jadi setiap tahap ditunggu sampai selesai sebelum lanjut ke tahap berikutnya.</p>
+        <p>Isi setiap halaman berupa potongan teks kecil (<code>item.str</code>) yang kita sambung satu per satu. Kalau <code>item.hasEOL</code> bernilai <code>true</code>, baris di PDF berakhir di situ, jadi kita tambahkan baris baru.</p>
+        <p>Fungsi <code>handlePdfFiles</code> di script memanggil <code>extractPdfText</code> untuk setiap file yang dipilih, menyimpan hasilnya ke <code>state.documents</code>, lalu menulis statusnya. PDF hasil scan berisi gambar, bukan teks, sehingga hasilnya kosong. Aplikasi menolak file seperti itu dan menulis alasannya di bawah tombol pilih file.</p>
+      </section>
+
+      <section id="langkah-8" aria-labelledby="langkah-8-title">
+        <p class="step-label">Langkah 8</p>
+        <h3 id="langkah-8-title">Menggabungkan teks PDF ke konteks</h3>
+        <p>Fungsi <code>buildContext</code> dari Langkah 3 diperluas. Setelah catatan teks, teks setiap PDF ditambahkan dengan label nama filenya.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-context">Salin</button></div>
+          <pre class="code-pre"><code id="code-context">function buildContext() {
+  const parts = [];
+  const text = el.contextText.value.trim();
+  if (text) parts.push(`[Catatan teks]\n${text}`);
+  for (const doc of state.documents) {
+    parts.push(`[Dokumen: ${doc.name}]\n${doc.text}`);
+  }
+  return parts.join('\n\n');
+}</code></pre>
+        </div>
+        <p><code>buildSystemPrompt</code> tidak perlu diubah sama sekali, karena fungsi itu hanya memanggil <code>buildContext</code>. Inilah untungnya memisahkan tugas ke fungsi-fungsi kecil.</p>
+        <p>PDF bisa membuat konteks jauh lebih panjang. Kalau totalnya melebihi 60.000 karakter, kotak ukuran konteks di panel Pengaturan berubah kuning dan bagian akhir konteks akan dipotong.</p>
+      </section>
+
+      <section id="mencoba-2" aria-labelledby="mencoba-2-title">
+        <h3 id="mencoba-2-title">Mencoba Tingkat 2</h3>
+        <ol>
+          <li>Di <a href="#app-main">aplikasi di bagian atas</a>, unggah PDF yang berisi teks, misalnya daftar harga.</li>
+          <li>Periksa daftar PDF dan jumlah karakter konteks di panel Pengaturan.</li>
+          <li>Tanyakan sesuatu yang hanya ada di PDF itu. Agent seharusnya menjawab dari isi PDF.</li>
+          <li>Unggah PDF hasil scan. Aplikasi seharusnya menolaknya dengan alasan tidak ada teks.</li>
+        </ol>
       </section>
 
       <section id="masalah" aria-labelledby="masalah-title">
         <h3 id="masalah-title">Masalah yang sering muncul</h3>
         <p>Pesan di kiri adalah tulisan yang muncul di aplikasi. Arti kode status (401, 402, dan seterusnya) diambil dari <a href="https://netra.sh/docs/errors">dokumentasi error Netra</a>.</p>
+        <h4>Tingkat 1</h4>
         <dl class="mt-4 divide-y-2 divide-black border-3 border-black bg-white">
           <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
             <dt class="font-bold">Isi API key dulu di panel Pengaturan.</dt>
@@ -530,6 +602,13 @@ Buku bisa ditukar maksimal 3 hari setelah diterima, wajib membawa nota.</code></
             <dd class="text-stone-700">Internet putus, atau jaringan sekolah memblokir alamat api.netra.sh. Coba jaringan lain.</dd>
           </div>
           <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+            <dt class="font-bold">Halaman tampil polos tanpa warna</dt>
+            <dd class="text-stone-700">Script Tailwind gagal dimuat. Periksa internet, lalu muat ulang halaman.</dd>
+          </div>
+        </dl>
+        <h4>Tingkat 2 (PDF)</h4>
+        <dl class="mt-4 divide-y-2 divide-black border-3 border-black bg-white">
+          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
             <dt class="font-bold">Pembaca PDF gagal dimuat.</dt>
             <dd class="text-stone-700">Library pdf.js tidak bisa diunduh dari cdnjs. Periksa internet, lalu pilih file lagi.</dd>
           </div>
@@ -544,10 +623,6 @@ Buku bisa ditukar maksimal 3 hari setelah diterima, wajib membawa nota.</code></
           <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
             <dt class="font-bold">Kotak kuning: melebihi batas 60.000</dt>
             <dd class="text-stone-700">Konteks terlalu panjang dan bagian akhirnya akan dipotong. Hapus PDF yang tidak perlu.</dd>
-          </div>
-          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
-            <dt class="font-bold">Halaman tampil polos tanpa warna</dt>
-            <dd class="text-stone-700">Script Tailwind gagal dimuat. Periksa internet, lalu muat ulang halaman.</dd>
           </div>
         </dl>
       </section>
@@ -565,11 +640,16 @@ Buku bisa ditukar maksimal 3 hari setelah diterima, wajib membawa nota.</code></
 
       <section id="latihan" aria-labelledby="latihan-title">
         <h3 id="latihan-title">Latihan</h3>
+        <h4>Tingkat 1</h4>
         <ol>
           <li>Tambahkan kolom Nama toko di panel Pengaturan, lalu masukkan nilainya ke system prompt, misalnya "Kamu adalah customer service untuk Toko X".</li>
           <li>Tambahkan tombol Salin di setiap gelembung jawaban agent. Petunjuk: <code>navigator.clipboard.writeText()</code>.</li>
           <li>Kirim hanya 10 pesan terakhir ke API supaya token lebih hemat. Petunjuk: <code>state.history.slice(-10)</code>.</li>
           <li>Ganti <code>reasoning: { enabled: true }</code> menjadi <code>{ enabled: false }</code>, lalu bandingkan kecepatan dan isi jawabannya. Menurut dokumentasi Netra, <code>enabled: true</code> memakai tingkat berpikir <code>high</code>.</li>
+        </ol>
+        <h4>Tingkat 2</h4>
+        <ol>
+          <li>Tampilkan 100 karakter pertama teks setiap PDF di bawah nama filenya, supaya pemilik toko bisa memastikan teksnya terbaca benar. Petunjuk: <code>doc.text.slice(0, 100)</code>.</li>
           <li>Tantangan: tampilkan jawaban sedikit demi sedikit dengan streaming. Baca <a href="https://netra.sh/docs/streaming">panduan streaming Netra</a>.</li>
         </ol>
       </section>

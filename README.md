@@ -15,7 +15,7 @@ Perlu koneksi internet, karena Tailwind, pembaca PDF (pdf.js), dan API Netra dim
 
 | File | Isi |
 |------|-----|
-| `index.html` | Aplikasi dan tutorial dalam satu file. Bagian atas berisi panel Pengaturan dan panel Chat, bagian bawah berisi tutorial langkah demi langkah (tombol "Baca tutorial" di header). Bagian `<script>` di akhir file membaca PDF, menyusun konteks, memanggil API, dan menampilkan chat. |
+| `index.html` | Aplikasi dan tutorial dalam satu file. Bagian atas berisi panel Pengaturan dan panel Chat, bagian bawah berisi tutorial dua tingkat (tombol "Baca tutorial" di header): Tingkat 1 memakai konteks teks saja, Tingkat 2 menambahkan konteks dari PDF. Bagian `<script>` di akhir file membaca PDF, menyusun konteks, memanggil API, dan menampilkan chat. |
 
 ## Alur kerja
 
