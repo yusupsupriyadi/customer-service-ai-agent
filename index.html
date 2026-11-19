@@ -23,7 +23,11 @@
       .panel-bar { @apply flex items-center justify-between gap-2 border-b-3 border-black px-4 py-2; }
       .btn { @apply inline-flex min-h-11 shrink-0 items-center justify-center border-2 border-black bg-white px-4 text-sm font-bold text-black hover:bg-paper active:bg-stone-200; }
       .btn-accent { @apply bg-accent hover:bg-yellow-300 active:bg-yellow-400; }
+      /* Hitam penuh menandai sesuatu yang sedang "hidup": mic merekam atau panggilan berjalan. */
+      .btn-live { @apply bg-black text-white hover:bg-stone-800 active:bg-stone-700; }
       .btn:disabled { @apply bg-stone-200 text-stone-600; }
+      .call-bar { @apply border-t-3 border-black bg-black p-3 text-white; }
+      .call-bar :focus-visible { outline-color: #fff; }
       .field-label { @apply block text-sm font-bold; }
       .field { @apply min-h-11 w-full min-w-0 border-2 border-black bg-white px-3 text-sm placeholder:text-stone-600; }
       .hint { @apply text-xs text-stone-700; }
@@ -38,7 +42,7 @@
       .doc ul { @apply list-disc; }
       .doc ol { @apply list-decimal; }
       .doc a { @apply font-bold text-black underline decoration-2 underline-offset-2 hover:bg-accent; }
-      .doc :not(pre) > code { @apply border border-black bg-paper px-1 text-[0.9em]; }
+      .doc :not(pre) > code { @apply border border-black bg-paper px-1 text-[0.9em] break-words; }
       .doc section + section { @apply mt-12 border-t-3 border-black pt-10; }
       .doc .tier { @apply mt-12 border-3 border-black bg-paper p-5; }
       .doc .tier + section { @apply mt-8 border-t-0 pt-0; }
@@ -94,6 +98,23 @@
           <input id="model" type="text" spellcheck="false" value="deepseek/deepseek-v4.1-flash" class="field mt-1">
         </div>
 
+        <div id="deepgram-key-group">
+          <label for="deepgram-key" class="field-label">API key Deepgram</label>
+          <p id="deepgram-key-hint" class="hint mt-1">Untuk tombol Rekam dan Telepon: mengubah suara menjadi teks, dan membacakan jawaban agent.</p>
+          <div class="mt-2 flex gap-2">
+            <input id="deepgram-key" type="password" autocomplete="off" spellcheck="false" aria-describedby="deepgram-key-hint"
+              placeholder="Tempel API key Deepgram di sini" class="field">
+            <button id="btn-toggle-deepgram-key" type="button" aria-pressed="false" aria-controls="deepgram-key" class="btn px-3">
+              Tampilkan
+            </button>
+          </div>
+          <div class="mt-2 flex min-h-11 items-center gap-2">
+            <input id="remember-deepgram-key" type="checkbox" class="h-5 w-5 accent-black">
+            <label for="remember-deepgram-key" class="text-sm font-medium">Simpan API key Deepgram di browser ini</label>
+          </div>
+          <p class="hint">API key dan rekaman suara hanya dikirim ke api.deepgram.com.</p>
+        </div>
+
         <div id="context-text-group">
           <label for="context-text" class="field-label">Konteks teks</label>
           <p id="context-text-hint" class="hint mt-1">Tulis info usaha: produk, harga, jam buka, ongkir, aturan retur, dan sebagainya.</p>
@@ -116,11 +137,16 @@
     </section>
 
     <section id="chat-panel" aria-labelledby="chat-title" class="panel flex h-[36rem] flex-col lg:h-[calc(100dvh-10rem)] lg:min-h-[32rem]">
-      <div class="panel-bar">
+      <div class="panel-bar flex-wrap">
         <h2 id="chat-title" class="font-bold text-xl">Chat</h2>
-        <button id="btn-clear-chat" type="button" class="btn">
-          Hapus percakapan
-        </button>
+        <div class="flex flex-wrap justify-end gap-2">
+          <button id="btn-call" type="button" class="btn">
+            Telepon
+          </button>
+          <button id="btn-clear-chat" type="button" class="btn">
+            Hapus percakapan
+          </button>
+        </div>
       </div>
 
       <div id="chat-messages" class="flex-1 space-y-4 overflow-y-auto p-4"></div>
@@ -128,16 +154,32 @@
 
       <form id="chat-form" class="border-t-3 border-black p-3">
         <label for="chat-input" class="field-label">Pertanyaan pelanggan</label>
-        <div class="mt-1 flex items-end gap-2">
+        <div class="mt-1 flex flex-wrap items-end gap-2 sm:flex-nowrap">
           <textarea id="chat-input" rows="2" aria-describedby="chat-input-hint"
             placeholder="Contoh: Jam berapa toko buka hari Minggu?"
-            class="field resize-none p-3"></textarea>
-          <button id="btn-send" type="submit" class="btn btn-accent">
+            class="field resize-none p-3 sm:flex-1"></textarea>
+          <button id="btn-mic" type="button" class="btn min-w-24 flex-1 sm:flex-none">
+            Rekam
+          </button>
+          <button id="btn-send" type="submit" class="btn btn-accent flex-1 sm:flex-none">
             Kirim
           </button>
         </div>
-        <p id="chat-input-hint" class="hint mt-1">Enter untuk kirim, Shift+Enter untuk baris baru.</p>
+        <p id="chat-input-hint" class="hint mt-1">Enter untuk kirim, Shift+Enter untuk baris baru. Tekan Rekam untuk bertanya lewat suara.</p>
       </form>
+
+      <div id="call-bar" class="call-bar" hidden>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p id="call-status" role="status" aria-live="polite" class="font-bold text-lg"></p>
+            <p id="call-transcript" class="mt-1 min-h-5 break-words text-sm text-stone-300"></p>
+          </div>
+          <div class="flex items-center gap-3">
+            <p class="font-bold tabular-nums"><span class="sr-only">Lama panggilan </span><span id="call-clock">00:00</span></p>
+            <button id="btn-end-call" type="button" class="btn">Akhiri panggilan</button>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -170,6 +212,16 @@
           <li class="pl-3"><a href="#langkah-7">Langkah 7: Membaca PDF</a></li>
           <li class="pl-3"><a href="#langkah-8">Langkah 8: Menggabungkan konteks</a></li>
           <li class="pl-3"><a href="#mencoba-2">Mencoba Tingkat 2</a></li>
+          <li><a class="font-bold" href="#tingkat-3">Tingkat 3: Input suara</a></li>
+          <li class="pl-3"><a href="#langkah-9">Langkah 9: Key Deepgram dan tombol Rekam</a></li>
+          <li class="pl-3"><a href="#langkah-10">Langkah 10: Merekam suara</a></li>
+          <li class="pl-3"><a href="#langkah-11">Langkah 11: Suara menjadi teks</a></li>
+          <li class="pl-3"><a href="#mencoba-3">Mencoba Tingkat 3</a></li>
+          <li><a class="font-bold" href="#tingkat-4">Tingkat 4: Panggilan suara</a></li>
+          <li class="pl-3"><a href="#langkah-12">Langkah 12: Status panggilan</a></li>
+          <li class="pl-3"><a href="#langkah-13">Langkah 13: WebSocket Deepgram</a></li>
+          <li class="pl-3"><a href="#langkah-14">Langkah 14: Agent bicara</a></li>
+          <li class="pl-3"><a href="#mencoba-4">Mencoba Tingkat 4</a></li>
           <li><a href="#masalah">Masalah yang sering muncul</a></li>
           <li><a href="#keamanan">Catatan keamanan</a></li>
           <li><a href="#latihan">Latihan</a></li>
@@ -193,6 +245,16 @@
           <li class="pl-3"><a href="#langkah-7">Langkah 7: Membaca PDF</a></li>
           <li class="pl-3"><a href="#langkah-8">Langkah 8: Menggabungkan konteks</a></li>
           <li class="pl-3"><a href="#mencoba-2">Mencoba Tingkat 2</a></li>
+          <li><a class="font-bold" href="#tingkat-3">Tingkat 3: Input suara</a></li>
+          <li class="pl-3"><a href="#langkah-9">Langkah 9: Key Deepgram dan tombol Rekam</a></li>
+          <li class="pl-3"><a href="#langkah-10">Langkah 10: Merekam suara</a></li>
+          <li class="pl-3"><a href="#langkah-11">Langkah 11: Suara menjadi teks</a></li>
+          <li class="pl-3"><a href="#mencoba-3">Mencoba Tingkat 3</a></li>
+          <li><a class="font-bold" href="#tingkat-4">Tingkat 4: Panggilan suara</a></li>
+          <li class="pl-3"><a href="#langkah-12">Langkah 12: Status panggilan</a></li>
+          <li class="pl-3"><a href="#langkah-13">Langkah 13: WebSocket Deepgram</a></li>
+          <li class="pl-3"><a href="#langkah-14">Langkah 14: Agent bicara</a></li>
+          <li class="pl-3"><a href="#mencoba-4">Mencoba Tingkat 4</a></li>
           <li><a href="#masalah">Masalah yang sering muncul</a></li>
           <li><a href="#keamanan">Catatan keamanan</a></li>
           <li><a href="#latihan">Latihan</a></li>
@@ -204,12 +266,14 @@
       <section id="tentang" aria-labelledby="tentang-title">
         <h3 id="tentang-title">Apa yang akan kamu buat</h3>
         <p>Bayangkan sebuah toko online yang setiap hari ditanya hal yang sama: jam buka, ongkir, cara retur. Di tutorial ini kamu membuat petugas customer service otomatis. Pemilik toko menulis informasi usahanya, lalu AI menjawab pertanyaan pelanggan hanya dari informasi itu.</p>
-        <p>Tutorial dibagi menjadi dua tingkat:</p>
+        <p>Tutorial dibagi menjadi empat tingkat:</p>
         <ul>
           <li>Tingkat 1 (dasar): agent menjawab dari konteks teks yang diketik pemilik toko. Kamu belajar menata halaman dengan Tailwind, menulis system prompt, memanggil API dengan <code>fetch</code>, dan menampilkan keadaan layar kosong, memuat, dan error.</li>
           <li>Tingkat 2 (lanjutan): agent juga bisa membaca dokumen PDF. Kamu belajar memakai library pdf.js untuk mengambil teks dari file PDF langsung di browser.</li>
+          <li>Tingkat 3 (lanjutan): pelanggan bisa bertanya lewat rekaman suara. Kamu belajar merekam mikrofon dengan <code>MediaRecorder</code> dan mengubah suara menjadi teks (speech to text) dengan API Deepgram.</li>
+          <li>Tingkat 4 (paling menantang): pelanggan bisa menelepon agent. Kamu belajar WebSocket untuk mendengarkan secara langsung, menentukan giliran bicara, dan membuat agent menjawab dengan suara (text to speech).</li>
         </ul>
-        <p>Selesaikan Tingkat 1 sampai aplikasinya bisa menjawab, baru lanjut ke Tingkat 2. Aplikasi di bagian atas halaman ini sudah lengkap sampai Tingkat 2, jadi hasil akhirnya bisa kamu lihat kapan saja.</p>
+        <p>Kerjakan berurutan: selesaikan satu tingkat sampai aplikasinya berjalan, baru lanjut ke tingkat berikutnya. Aplikasi di bagian atas halaman ini sudah lengkap sampai Tingkat 4, jadi hasil akhirnya bisa kamu lihat kapan saja.</p>
       </section>
 
       <section id="persiapan" aria-labelledby="persiapan-title">
@@ -219,6 +283,7 @@
           <li>Teks editor, misalnya VS Code. Ekstensi Live Server boleh dipakai, tapi tidak wajib.</li>
           <li>Koneksi internet, karena Tailwind, API, dan pembaca PDF di Tingkat 2 dimuat dari internet.</li>
           <li>API key Netra.</li>
+          <li>Untuk Tingkat 3 dan 4: mikrofon (bawaan laptop atau headset) dan API key Deepgram.</li>
         </ul>
         <h4>Cara mendapatkan API key Netra</h4>
         <ol>
@@ -227,6 +292,13 @@
           <li>Buka menu API Keys, buat key baru, lalu langsung salin. Key lengkap hanya ditampilkan satu kali.</li>
         </ol>
         <p>Kalau sekolah sudah punya akun Netra, minta API key ke guru. Panduan resminya ada di <a href="https://netra.sh/docs/first-request">dokumentasi Netra: Make your first request</a>.</p>
+        <h4>Cara mendapatkan API key Deepgram</h4>
+        <ol>
+          <li>Daftar atau masuk ke <a href="https://console.deepgram.com">Deepgram Console</a>.</li>
+          <li>Pilih project di menu Projects kiri atas, buka Settings, lalu pilih API Keys.</li>
+          <li>Pilih Create a New API Key, beri nama, lalu Create Key. Salin key-nya saat itu juga, karena Deepgram tidak akan menampilkannya lagi.</li>
+        </ol>
+        <p>Panduan resminya ada di <a href="https://developers.deepgram.com/docs/create-additional-api-keys">dokumentasi Deepgram: Creating API Keys</a>.</p>
       </section>
 
       <section id="struktur" aria-labelledby="struktur-title">
@@ -246,6 +318,7 @@
           <li>Script menampilkan jawaban itu sebagai gelembung chat.</li>
         </ol>
         <p>Tingkat 2 menambah satu tahap sebelum tahap kedua: teks dari PDF dibaca, lalu digabung dengan konteks teks.</p>
+        <p>Tingkat 3 menambah tahap sebelum tahap ketiga: suara pelanggan direkam, diubah menjadi teks oleh Deepgram, lalu dikirim sebagai pertanyaan biasa. Tingkat 4 menjalankan semuanya bergantian tanpa henti: Deepgram mendengarkan, Netra menjawab, Deepgram membacakan jawaban, lalu kembali mendengarkan.</p>
       </section>
 
       <section id="tingkat-1" aria-labelledby="tingkat-1-title" class="tier">
@@ -480,7 +553,7 @@ Buku bisa ditukar maksimal 3 hari setelah diterima, wajib membawa nota.</code></
         <p><code>pdf-status</code> menampilkan hasil membaca file, misalnya berapa PDF yang berhasil dibaca. <code>role="status"</code> membuat pesan itu ikut dibacakan pembaca layar. <code>pdf-list</code> berisi daftar PDF yang sudah masuk, masing-masing dengan tombol Hapus.</p>
         <p>State mendapat satu isian baru, <code>documents</code>. Setiap PDF yang berhasil dibaca disimpan di sini. Jangan lupa tambahkan juga <code>pdfInput: document.getElementById('pdf-input')</code> ke objek <code>el</code>.</p>
         <div class="code-block">
-          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-state">Salin</button></div>
+          <div class="code-bar"><span class="code-name">index.html, bagian script (versi Tingkat 2)</span><button type="button" class="copy-btn" data-copy="code-state">Salin</button></div>
           <pre class="code-pre"><code id="code-state">const state = {
   documents: [], // { name, pages, text }
   history: [], // { role: 'user' | 'assistant', content }
@@ -572,17 +645,376 @@ function loadPdfJs() {
         </ol>
       </section>
 
+      <section id="tingkat-3" aria-labelledby="tingkat-3-title" class="tier">
+        <p class="step-label">Tingkat 3: Input suara</p>
+        <h3 id="tingkat-3-title">Bertanya lewat rekaman suara</h3>
+        <p>Di tingkat ini pelanggan menekan tombol Rekam, bicara, lalu menekan Selesai. Rekaman dikirim ke Deepgram, layanan speech to text yang mengubah suara menjadi teks. Teks itu lalu dikirim ke agent persis seperti pertanyaan yang diketik.</p>
+        <p>Kamu belajar meminta izin mikrofon, merekam dengan <code>MediaRecorder</code>, dan mengirim file audio ke API. Tingkat ini tidak memakai PDF, jadi boleh dikerjakan langsung setelah Tingkat 1.</p>
+      </section>
+
+      <section id="langkah-9" aria-labelledby="langkah-9-title">
+        <p class="step-label">Langkah 9</p>
+        <h3 id="langkah-9-title">Kolom API key Deepgram dan tombol Rekam</h3>
+        <p>Tambahkan kolom API key Deepgram di panel Pengaturan, lalu tombol Rekam di form chat, di antara kolom pertanyaan dan tombol Kirim.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html (disederhanakan)</span><button type="button" class="copy-btn" data-copy="code-mic-html">Salin</button></div>
+          <pre class="code-pre"><code id="code-mic-html">&lt;label for="deepgram-key" class="field-label"&gt;API key Deepgram&lt;/label&gt;
+&lt;input id="deepgram-key" type="password" autocomplete="off" spellcheck="false"
+  placeholder="Tempel API key Deepgram di sini" class="field"&gt;
+
+&lt;button id="btn-mic" type="button" class="btn"&gt;Rekam&lt;/button&gt;</code></pre>
+        </div>
+        <p>Perhatikan <code>type="button"</code> pada tombol Rekam. Tombol di dalam form tanpa atribut itu dianggap tombol kirim, jadi menekan Rekam akan langsung mengirim form.</p>
+        <p>Kolom key Deepgram juga punya tombol Tampilkan dan pilihan Simpan, sama seperti key Netra. Supaya kodenya tidak ditulis dua kali, perilaku itu dibungkus fungsi <code>setupKeyField</code> yang dipanggil untuk kedua kolom:</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-setup-key">Salin</button></div>
+          <pre class="code-pre"><code id="code-setup-key">setupKeyField(el.apiKey, el.toggleKey, el.rememberKey, STORAGE.apiKey);
+setupKeyField(el.deepgramKey, el.toggleDeepgramKey, el.rememberDeepgramKey, STORAGE.deepgramKey);</code></pre>
+        </div>
+        <p>State mendapat isian baru, <code>voiceStatus</code>, dengan tiga nilai: diam, sedang merekam, dan sedang mengubah suara menjadi teks. Label tombol Rekam dan tulisan di panel chat dibaca dari nilai ini.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script (isian baru di state)</span><button type="button" class="copy-btn" data-copy="code-state-voice">Salin</button></div>
+          <pre class="code-pre"><code id="code-state-voice">voiceStatus: 'idle', // 'idle' | 'recording' | 'transcribing'</code></pre>
+        </div>
+        <p>Tambahkan juga <code>deepgramKey: document.getElementById('deepgram-key')</code> dan <code>micButton: document.getElementById('btn-mic')</code> ke objek <code>el</code>.</p>
+      </section>
+
+      <section id="langkah-10" aria-labelledby="langkah-10-title">
+        <p class="step-label">Langkah 10</p>
+        <h3 id="langkah-10-title">Merekam suara dengan MediaRecorder</h3>
+        <p>Browser punya dua alat bawaan untuk merekam. <code>navigator.mediaDevices.getUserMedia</code> meminta izin lalu membuka mikrofon, dan <code>MediaRecorder</code> merekam suaranya. Fungsi <code>getMicrophone</code> di script membungkus langkah pertama dan mengubah error izin menjadi pesan yang mudah dipahami.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-record">Salin</button></div>
+          <pre class="code-pre"><code id="code-record">async function startRecording() {
+  const stream = await getMicrophone();
+  const chunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.addEventListener('dataavailable', (event) =&gt; {
+    if (event.data.size &gt; 0) chunks.push(event.data);
+  });
+  recorder.addEventListener('stop', () =&gt; {
+    stream.getTracks().forEach((track) =&gt; track.stop()); // mematikan mikrofon
+    const audio = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
+    recorder = null;
+    handleRecording(audio);
+  });
+  recorder.start();
+  // Rekaman berhenti sendiri setelah batas waktu, supaya mikrofon tidak lupa dimatikan.
+  recordingTimer = setTimeout(stopRecording, MAX_RECORDING_SECONDS * 1000);
+}
+
+function stopRecording() {
+  clearTimeout(recordingTimer);
+  if (recorder?.state === 'recording') recorder.stop();
+}</code></pre>
+        </div>
+        <p>Selama merekam, <code>MediaRecorder</code> mengirim potongan audio lewat event <code>dataavailable</code>, dan potongan itu dikumpulkan di <code>chunks</code>. Saat rekaman dihentikan, event <code>stop</code> menggabungkan semua potongan menjadi satu <code>Blob</code>, yaitu file audio di memori browser. Di Chrome dan Edge formatnya WebM.</p>
+        <p>Jangan lupa <code>track.stop()</code>. Tanpa baris itu mikrofon tetap menyala dan tanda merekam di tab browser tidak hilang.</p>
+        <p>Browser hanya mengizinkan mikrofon di halaman yang aman: alamat <code>https://</code>, <code>localhost</code>, atau file yang dibuka langsung dari komputer. Halaman <code>http://</code> biasa tidak bisa merekam.</p>
+      </section>
+
+      <section id="langkah-11" aria-labelledby="langkah-11-title">
+        <p class="step-label">Langkah 11</p>
+        <h3 id="langkah-11-title">Mengubah suara menjadi teks dengan Deepgram</h3>
+        <p>Contoh dari dokumentasi Deepgram memakai curl. Ada dua perbedaan dengan Netra: header-nya ditulis <code>Token</code>, bukan <code>Bearer</code>, dan isi permintaannya adalah file audio itu sendiri, bukan JSON.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">terminal</span><button type="button" class="copy-btn" data-copy="code-curl-listen">Salin</button></div>
+          <pre class="code-pre"><code id="code-curl-listen">curl -sS "https://api.deepgram.com/v1/listen?model=nova-3&amp;language=id&amp;smart_format=true" \
+  -H "Authorization: Token $DEEPGRAM_API_KEY" \
+  -H "Content-Type: audio/webm" \
+  --data-binary @rekaman.webm</code></pre>
+        </div>
+        <p>Pengaturannya ditulis di alamat URL, setelah tanda tanya:</p>
+        <ul>
+          <li><code>model=nova-3</code>: model speech to text Deepgram yang paling akurat untuk pemakaian umum.</li>
+          <li><code>language=id</code>: Bahasa Indonesia. Tanpa ini, Deepgram menganggap suaranya berbahasa Inggris.</li>
+          <li><code>smart_format=true</code>: menambah tanda baca, dan menulis angka, tanggal, serta jam dengan format yang mudah dibaca.</li>
+        </ul>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-listen-url">Salin</button></div>
+          <pre class="code-pre"><code id="code-listen-url">// nova-3 adalah model speech to text Deepgram yang paling akurat untuk pemakaian umum. language=id: Bahasa Indonesia.
+const DEEPGRAM_LISTEN_URL = 'https://api.deepgram.com/v1/listen?model=nova-3&amp;language=id&amp;smart_format=true';</code></pre>
+        </div>
+        <p>Di browser, perintah curl itu ditulis dengan <code>fetch</code>. File rekaman (<code>Blob</code>) langsung menjadi <code>body</code>, dan jenis filenya dikirim di header <code>Content-Type</code>.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-transcribe">Salin</button></div>
+          <pre class="code-pre"><code id="code-transcribe">async function transcribeAudio(apiKey, audio) {
+  let response;
+  try {
+    response = await fetch(DEEPGRAM_LISTEN_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${apiKey}`,
+        'Content-Type': audio.type,
+      },
+      body: audio, // file rekaman dikirim apa adanya, bukan JSON
+    });
+  } catch {
+    throw new Error('Tidak bisa terhubung ke server Deepgram. Periksa koneksi internet.');
+  }
+
+  const data = await response.json().catch(() =&gt; null);
+  if (!response.ok) throw new Error(describeDeepgramError(response.status, data));
+
+  const text = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim();
+  if (!text) throw new Error('Suara tidak terdengar jelas. Dekatkan mikrofon, lalu rekam ulang.');
+  return text;
+}</code></pre>
+        </div>
+        <p>Teks hasilnya ada di <code>results.channels[0].alternatives[0].transcript</code>. Kalau teksnya kosong, Deepgram tidak menemukan satu kata pun, misalnya karena suaranya terlalu pelan.</p>
+        <p>Terakhir, teks itu dimasukkan ke kolom pertanyaan, lalu form dikirim dengan <code>requestSubmit()</code>. Dengan cara ini pertanyaan dari suara melewati jalur yang sama dengan pertanyaan yang diketik, termasuk pengecekan API key Netra dan tampilan error.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-handle-recording">Salin</button></div>
+          <pre class="code-pre"><code id="code-handle-recording">async function handleRecording(audio) {
+  setVoiceStatus('transcribing');
+  el.chatStatus.textContent = 'Mengubah suara menjadi teks.';
+  try {
+    const text = await transcribeAudio(el.deepgramKey.value.trim(), audio);
+    setVoiceStatus('idle');
+    // Teks hasil rekaman dikirim lewat form chat, sama seperti pertanyaan yang diketik.
+    el.chatInput.value = text;
+    el.chatForm.requestSubmit();
+  } catch (error) {
+    setVoiceStatus('idle');
+    showError(error.message);
+  }
+}</code></pre>
+        </div>
+      </section>
+
+      <section id="mencoba-3" aria-labelledby="mencoba-3-title">
+        <h3 id="mencoba-3-title">Mencoba Tingkat 3</h3>
+        <ol>
+          <li>Di <a href="#app-main">aplikasi di bagian atas</a>, isi API key Netra, contoh konteks dari Tingkat 1, dan API key Deepgram.</li>
+          <li>Tekan Rekam. Browser akan meminta izin memakai mikrofon, pilih Izinkan.</li>
+          <li>Ucapkan "Hari Minggu toko buka tidak?", lalu tekan Selesai.</li>
+          <li>Pertanyaanmu muncul sebagai gelembung Pelanggan, lalu agent menjawab seperti biasa.</li>
+          <li>Tekan Rekam lalu langsung Selesai tanpa bicara. Aplikasi seharusnya bilang suara tidak terdengar jelas.</li>
+        </ol>
+      </section>
+
+      <section id="tingkat-4" aria-labelledby="tingkat-4-title" class="tier">
+        <p class="step-label">Tingkat 4: Panggilan suara</p>
+        <h3 id="tingkat-4-title">Menelepon customer service</h3>
+        <p>Di tingkat ini pelanggan menekan Telepon, lalu mengobrol tanpa menekan tombol lagi, seperti menelepon. Agent menyapa, mendengarkan, lalu menjawab dengan suara. Tiga proses bekerja bergantian:</p>
+        <ol>
+          <li>Deepgram mendengarkan suara pelanggan secara langsung lewat WebSocket dan mengubahnya menjadi teks.</li>
+          <li>Saat pelanggan diam, teksnya dikirim ke Netra seperti pertanyaan biasa.</li>
+          <li>Jawaban Netra dibacakan oleh text to speech Deepgram, lalu aplikasi kembali mendengarkan.</li>
+        </ol>
+        <p>Tingkat ini paling menantang, karena aplikasi harus tahu kapan giliran pelanggan dan kapan giliran agent. Selesaikan Tingkat 3 dulu, karena fungsi <code>getMicrophone</code> dan API key Deepgram dari sana dipakai lagi.</p>
+      </section>
+
+      <section id="langkah-12" aria-labelledby="langkah-12-title">
+        <p class="step-label">Langkah 12</p>
+        <h3 id="langkah-12-title">Tombol Telepon dan status panggilan</h3>
+        <p>Tombol Telepon diletakkan di samping Hapus percakapan. Selama panggilan, form chat disembunyikan dan diganti bar hitam berisi status, teks yang sedang didengar, lama panggilan, dan tombol Akhiri panggilan.</p>
+        <p>Panggilan punya lima status, disimpan di <code>state.callStatus</code>:</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script (isian baru di state)</span><button type="button" class="copy-btn" data-copy="code-state-call">Salin</button></div>
+          <pre class="code-pre"><code id="code-state-call">callStatus: 'off', // 'off' | 'connecting' | 'listening' | 'thinking' | 'speaking'</code></pre>
+        </div>
+        <ul>
+          <li><code>off</code>: tidak ada panggilan.</li>
+          <li><code>connecting</code>: membuka mikrofon dan menyambung ke Deepgram.</li>
+          <li><code>listening</code>: giliran pelanggan bicara.</li>
+          <li><code>thinking</code>: menunggu jawaban dari Netra.</li>
+          <li><code>speaking</code>: agent sedang bicara.</li>
+        </ul>
+        <p>Fungsi <code>setCallStatus</code> mengganti status, lalu menggambar ulang bar panggilan dan semua tombol. Benda yang hidup selama panggilan, yaitu WebSocket, mikrofon, perekam, dan suara agent, disimpan terpisah di objek <code>call</code>. Dengan begitu fungsi <code>endCall</code> bisa mematikan semuanya di satu tempat.</p>
+      </section>
+
+      <section id="langkah-13" aria-labelledby="langkah-13-title">
+        <p class="step-label">Langkah 13</p>
+        <h3 id="langkah-13-title">Mendengarkan langsung lewat WebSocket</h3>
+        <p>Di Tingkat 3, suara baru dikirim setelah rekaman selesai. Untuk telepon, suara harus dikirim terus selagi pelanggan bicara. <code>fetch</code> tidak cocok untuk itu, jadi dipakai WebSocket: sambungan dua arah yang tetap terbuka. Aplikasi mengirim potongan audio, dan Deepgram membalas dengan teks.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-live-url">Salin</button></div>
+          <pre class="code-pre"><code id="code-live-url">// Versi streaming untuk panggilan. endpointing=500: potongan kalimat baru ditutup setelah diam 0,5 detik.
+// Deepgram mengirim UtteranceEnd setelah pelanggan diam 1 detik.
+const DEEPGRAM_LIVE_URL = 'wss://api.deepgram.com/v1/listen?model=nova-3&amp;language=id&amp;smart_format=true&amp;interim_results=true&amp;endpointing=500&amp;utterance_end_ms=1000';</code></pre>
+        </div>
+        <p>Ada tiga pengaturan baru:</p>
+        <ul>
+          <li><code>interim_results=true</code>: Deepgram mengirim teks sementara selagi pelanggan masih bicara.</li>
+          <li><code>endpointing=500</code>: Deepgram baru menutup satu potongan kalimat setelah pelanggan diam 0,5 detik. Nilai bawaannya hanya 10 milidetik. Saat aplikasi ini diuji dengan nilai bawaan, kalimat terpotong di jeda kecil dan beberapa kata di tengahnya hilang. Dokumentasi Deepgram menyarankan 300 sampai 500 milidetik untuk percakapan.</li>
+          <li><code>utterance_end_ms=1000</code>: Deepgram mengirim pesan <code>UtteranceEnd</code> setelah pelanggan diam 1 detik. Pesan inilah tanda giliran agent menjawab.</li>
+        </ul>
+        <p>Browser tidak bisa menambah header <code>Authorization</code> ke WebSocket. Sebagai gantinya, Deepgram menerima API key lewat subprotocol, yaitu daftar <code>['token', apiKey]</code> di argumen kedua.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-socket">Salin</button></div>
+          <pre class="code-pre"><code id="code-socket">function openDeepgramSocket(apiKey) {
+  return new Promise((resolve, reject) =&gt; {
+    // Browser tidak bisa menambah header Authorization ke WebSocket, jadi API key dikirim lewat subprotocol.
+    const socket = new WebSocket(DEEPGRAM_LIVE_URL, ['token', apiKey]);
+    socket.addEventListener('open', () =&gt; resolve(socket));
+    socket.addEventListener('error', () =&gt; {
+      reject(new Error('Panggilan gagal tersambung ke Deepgram. Periksa API key Deepgram dan koneksi internet.'));
+    });
+  });
+}</code></pre>
+        </div>
+        <p>Setelah tersambung, perekam dijalankan dengan <code>start(250)</code>: potongan audio dikirim setiap 250 milidetik, tanpa menunggu rekaman selesai. Deepgram juga menutup koneksi yang 10 detik tidak menerima apa pun. Saat agent bicara, rekaman dijeda, jadi aplikasi mengirim pesan <code>KeepAlive</code> setiap 5 detik.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script (potongan startCall)</span><button type="button" class="copy-btn" data-copy="code-call-recorder">Salin</button></div>
+          <pre class="code-pre"><code id="code-call-recorder">call.recorder = new MediaRecorder(stream);
+call.recorder.addEventListener('dataavailable', (event) =&gt; {
+  if (event.data.size &gt; 0 &amp;&amp; call.socket?.readyState === WebSocket.OPEN) call.socket.send(event.data);
+});
+call.recorder.start(250); // potongan audio dikirim ke Deepgram setiap 250 milidetik
+// Deepgram menutup koneksi yang 10 detik tidak menerima apa pun, misalnya saat rekaman dijeda.
+call.keepAliveTimer = setInterval(() =&gt; {
+  if (call.socket?.readyState === WebSocket.OPEN) call.socket.send(JSON.stringify({ type: 'KeepAlive' }));
+}, 5000);</code></pre>
+        </div>
+        <h4>Menentukan giliran agent</h4>
+        <p>Setiap pesan dari Deepgram diolah oleh <code>handleCallMessage</code>. Pesan <code>Results</code> berisi teks. Kalau <code>is_final</code> bernilai <code>false</code>, teksnya masih sementara dan bisa berubah, jadi hanya ditampilkan di bar panggilan. Kalau <code>true</code>, teksnya disimpan.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-call-message">Salin</button></div>
+          <pre class="code-pre"><code id="code-call-message">function handleCallMessage(event) {
+  // Selama agent berpikir atau bicara, hasil dari Deepgram diabaikan.
+  if (state.callStatus !== 'listening') return;
+  const data = JSON.parse(event.data);
+
+  if (data.type === 'Results') {
+    const text = data.channel.alternatives[0].transcript;
+    // Hasil sementara (is_final false) masih bisa berubah, jadi hanya hasil final yang disimpan.
+    if (data.is_final) {
+      if (text) call.heardText = `${call.heardText} ${text}`.trim();
+      call.interimText = '';
+    } else {
+      call.interimText = text;
+    }
+    el.callTranscript.textContent = `${call.heardText} ${call.interimText}`.trim();
+  }
+
+  // UtteranceEnd: pelanggan sudah diam 1 detik setelah kata terakhir.
+  if (data.type === 'UtteranceEnd' &amp;&amp; (call.heardText || call.interimText)) call.turnEnded = true;
+
+  // UtteranceEnd kadang datang sebelum hasil final kalimat terakhir, jadi tunggu sampai tidak ada teks sementara.
+  if (call.turnEnded &amp;&amp; !call.interimText &amp;&amp; call.heardText) answerCustomer(call.heardText);
+}</code></pre>
+        </div>
+        <p>Kenapa tidak langsung menjawab begitu <code>UtteranceEnd</code> datang? Saat aplikasi ini diuji, <code>UtteranceEnd</code> pernah tiba sedikit lebih dulu daripada hasil final kalimat terakhir, sehingga agent menjawab kalimat yang terpotong. Karena itu aplikasi menunggu sampai tidak ada lagi teks sementara.</p>
+      </section>
+
+      <section id="langkah-14" aria-labelledby="langkah-14-title">
+        <p class="step-label">Langkah 14</p>
+        <h3 id="langkah-14-title">Agent menjawab dengan suara</h3>
+        <p>Fungsi <code>answerCustomer</code> mengirim teks pelanggan ke Netra, sama seperti chat. Bedanya, system prompt ditambah aturan khusus telepon:</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-call-rules">Salin</button></div>
+          <pre class="code-pre"><code id="code-call-rules">const CALL_RULES = [
+  'Pelanggan sedang menelepon, jadi jawabanmu akan dibacakan dengan suara.',
+  'Jawab paling banyak tiga kalimat pendek.',
+  'Tulis angka, jam, dan harga dengan huruf, misalnya sepuluh ribu rupiah atau pukul sembilan pagi.',
+  'Jangan memakai daftar, tanda bintang, atau simbol lain.',
+].join('\n');</code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script (potongan answerCustomer)</span><button type="button" class="copy-btn" data-copy="code-call-messages">Salin</button></div>
+          <pre class="code-pre"><code id="code-call-messages">const messages = [
+  { role: 'system', content: `${buildSystemPrompt()}\n\n${CALL_RULES}` },
+  ...state.history,
+];</code></pre>
+        </div>
+        <p>Aturan menulis angka dengan huruf penting karena suara agent memakai suara berbahasa Italia (penjelasannya di bawah). Tulisan "Rp10.000" bisa dibaca dengan cara Italia, sedangkan "sepuluh ribu rupiah" dibaca sesuai tulisannya.</p>
+        <p>Jawaban dari Netra lalu dikirim ke text to speech Deepgram. Contoh curl-nya:</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">terminal</span><button type="button" class="copy-btn" data-copy="code-curl-speak">Salin</button></div>
+          <pre class="code-pre"><code id="code-curl-speak">curl -sS "https://api.deepgram.com/v1/speak?model=aura-2-livia-it" \
+  -H "Authorization: Token $DEEPGRAM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Halo, ada yang bisa saya bantu?"}' \
+  --output jawaban.mp3</code></pre>
+        </div>
+        <p>Deepgram belum punya suara Bahasa Indonesia. Aplikasi ini memakai suara Italia <code>aura-2-livia-it</code>, karena cara baca bahasa Italia mirip bahasa Indonesia. Saat beberapa suara Inggris, Spanyol, dan Italia dicoba membacakan kalimat bahasa Indonesia, hasil suara inilah yang paling mudah dikenali kembali oleh speech to text Deepgram.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-speak-url">Salin</button></div>
+          <pre class="code-pre"><code id="code-speak-url">// Deepgram belum punya suara Bahasa Indonesia. Suara Italia ini paling jelas saat membacakan teks Indonesia.
+const DEEPGRAM_SPEAK_URL = 'https://api.deepgram.com/v1/speak?model=aura-2-livia-it';</code></pre>
+        </div>
+        <p>Fungsi <code>agentSays</code> meminta suara, memutarnya, lalu kembali mendengarkan. Sebelum itu, <code>answerCustomer</code> sudah menjeda perekam lewat <code>pauseListening</code>, supaya suara agent dari speaker tidak ikut terekam lalu dianggap sebagai suara pelanggan.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-agent-says">Salin</button></div>
+          <pre class="code-pre"><code id="code-agent-says">// Selama agent berpikir dan bicara, rekaman dijeda supaya suara agent tidak terdengar sebagai suara pelanggan.
+function pauseListening() {
+  if (call.recorder?.state === 'recording') call.recorder.pause();
+}
+
+function resumeListening() {
+  call.heardText = '';
+  call.interimText = '';
+  call.turnEnded = false;
+  if (call.recorder?.state === 'paused') call.recorder.resume();
+  setCallStatus('listening');
+}
+
+async function agentSays(text) {
+  try {
+    const response = await requestSpeech(el.deepgramKey.value.trim(), text);
+    const audio = await createAgentAudio(response);
+    if (state.callStatus === 'off') return;
+    setCallStatus('speaking');
+    await playAudio(audio);
+  } catch (error) {
+    endCall(error.message);
+    return;
+  }
+  if (state.callStatus !== 'off') resumeListening();
+}</code></pre>
+        </div>
+        <h4>Memutar suara sebelum selesai diunduh</h4>
+        <p>Deepgram mulai mengirim suara kurang dari satu detik setelah diminta, tetapi file lengkapnya baru selesai beberapa detik kemudian. Kalau aplikasi menunggu file lengkap, pelanggan menunggu dalam diam. Fungsi <code>streamAudio</code> memakai <code>MediaSource</code> untuk memutar setiap potongan suara begitu tiba.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-stream">Salin</button></div>
+          <pre class="code-pre"><code id="code-stream">// Suara diputar sambil potongan berikutnya masih diunduh, jadi agent mulai bicara lebih cepat.
+function streamAudio(response) {
+  const mediaSource = new MediaSource();
+  const audio = new Audio(URL.createObjectURL(mediaSource));
+  mediaSource.addEventListener('sourceopen', async () =&gt; {
+    const buffer = mediaSource.addSourceBuffer('audio/mpeg');
+    const reader = response.body.getReader();
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer.appendBuffer(value);
+        await new Promise((resolve) =&gt; buffer.addEventListener('updateend', resolve, { once: true }));
+      }
+      mediaSource.endOfStream();
+    } catch {
+      if (mediaSource.readyState === 'open') mediaSource.endOfStream('network');
+    }
+  }, { once: true });
+  return audio;
+}</code></pre>
+        </div>
+        <p>Browser yang belum mendukung cara ini memakai jalur cadangan di <code>createAgentAudio</code>: menunggu file lengkap, baru memutarnya.</p>
+      </section>
+
+      <section id="mencoba-4" aria-labelledby="mencoba-4-title">
+        <h3 id="mencoba-4-title">Mencoba Tingkat 4</h3>
+        <ol>
+          <li>Isi kedua API key dan contoh konteks di <a href="#app-main">aplikasi di bagian atas</a>, lalu tekan Telepon dan izinkan mikrofon.</li>
+          <li>Tunggu agent selesai menyapa sampai muncul tulisan "Silakan bicara. Agent mendengarkan."</li>
+          <li>Tanyakan "Ongkir dalam kota berapa?", lalu diam. Teks yang didengar muncul di bar hitam, dan tidak lama kemudian agent menjawab dengan suara.</li>
+          <li>Tanyakan satu hal lagi, lalu tekan Akhiri panggilan. Seluruh percakapan tetap tersimpan sebagai gelembung chat.</li>
+        </ol>
+        <p>Agent belum bisa dipotong saat sedang bicara. Tunggu jawabannya selesai, baru bicara lagi.</p>
+      </section>
+
       <section id="masalah" aria-labelledby="masalah-title">
         <h3 id="masalah-title">Masalah yang sering muncul</h3>
         <p>Pesan di kiri adalah tulisan yang muncul di aplikasi. Arti kode status (401, 402, dan seterusnya) diambil dari <a href="https://netra.sh/docs/errors">dokumentasi error Netra</a>.</p>
         <h4>Tingkat 1</h4>
         <dl class="mt-4 divide-y-2 divide-black border-3 border-black bg-white">
           <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
-            <dt class="font-bold">Isi API key dulu di panel Pengaturan.</dt>
-            <dd class="text-stone-700">Kolom API key masih kosong. Tempel API key, lalu kirim lagi.</dd>
+            <dt class="font-bold">Isi API key Netra dulu di panel Pengaturan.</dt>
+            <dd class="text-stone-700">Kolom API key Netra masih kosong. Tempel API key, lalu kirim lagi.</dd>
           </div>
           <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
-            <dt class="font-bold">API key ditolak. Periksa lagi API key Anda.</dt>
+            <dt class="font-bold">API key Netra ditolak. Periksa lagi API key Netra Anda.</dt>
             <dd class="text-stone-700">Status 401: key salah ketik, kedaluwarsa, atau sudah dicabut. Salin ulang key. Kalau key-nya hilang, buat key baru di menu API Keys.</dd>
           </div>
           <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
@@ -625,16 +1057,57 @@ function loadPdfJs() {
             <dd class="text-stone-700">Konteks terlalu panjang dan bagian akhirnya akan dipotong. Hapus PDF yang tidak perlu.</dd>
           </div>
         </dl>
+        <h4>Tingkat 3 dan 4 (suara)</h4>
+        <p>Arti kode status Deepgram diambil dari <a href="https://developers.deepgram.com/docs/errors">dokumentasi error Deepgram</a>.</p>
+        <dl class="mt-4 divide-y-2 divide-black border-3 border-black bg-white">
+          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+            <dt class="font-bold">Isi API key Deepgram dulu di panel Pengaturan.</dt>
+            <dd class="text-stone-700">Kolom API key Deepgram masih kosong. Tempel key-nya, lalu coba lagi.</dd>
+          </div>
+          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+            <dt class="font-bold">Izin mikrofon ditolak.</dt>
+            <dd class="text-stone-700">Mikrofon pernah diblokir untuk halaman ini. Klik ikon di kiri alamat web, ubah izin Mikrofon menjadi Izinkan, lalu muat ulang halaman.</dd>
+          </div>
+          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+            <dt class="font-bold">Mikrofon tidak ditemukan.</dt>
+            <dd class="text-stone-700">Komputer tidak punya mikrofon, atau mikrofonnya belum terpasang. Laptop biasanya punya mikrofon bawaan, komputer meja perlu headset.</dd>
+          </div>
+          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+            <dt class="font-bold">Browser ini tidak bisa merekam suara.</dt>
+            <dd class="text-stone-700">Browser terlalu lama, atau halaman dibuka lewat <code>http://</code> biasa. Pakai Chrome atau Edge terbaru, lalu buka file-nya langsung atau lewat <code>https://</code>.</dd>
+          </div>
+          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+            <dt class="font-bold">API key Deepgram ditolak.</dt>
+            <dd class="text-stone-700">Status 401: key salah ketik, kedaluwarsa, atau sudah dihapus. Buat key baru di Deepgram Console.</dd>
+          </div>
+          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+            <dt class="font-bold">Suara tidak terdengar jelas.</dt>
+            <dd class="text-stone-700">Deepgram tidak menemukan satu kata pun di rekaman. Bicara lebih dekat ke mikrofon, dan periksa mikrofon mana yang dipilih di pengaturan suara komputer.</dd>
+          </div>
+          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+            <dt class="font-bold">Panggilan gagal tersambung ke Deepgram.</dt>
+            <dd class="text-stone-700">WebSocket ditolak. Penyebab paling umum adalah API key Deepgram yang salah. Bisa juga jaringan sekolah memblokir alamat api.deepgram.com.</dd>
+          </div>
+          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+            <dt class="font-bold">Panggilan terputus.</dt>
+            <dd class="text-stone-700">Sambungan WebSocket tertutup di tengah panggilan, biasanya karena internet putus. Tekan Telepon lagi.</dd>
+          </div>
+          <div class="grid gap-1 p-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+            <dt class="font-bold">Browser menahan suara agent.</dt>
+            <dd class="text-stone-700">Browser baru mau memutar suara setelah pengguna mengklik halaman. Klik di mana saja di halaman, lalu tekan Telepon lagi.</dd>
+          </div>
+        </dl>
       </section>
 
       <section id="keamanan" aria-labelledby="keamanan-title">
         <h3 id="keamanan-title">Catatan keamanan</h3>
-        <p>Di aplikasi ini API key dipakai langsung dari browser. Siapa pun yang membuka DevTools di komputer itu bisa melihat key-nya. Dokumentasi Netra sendiri meminta key disimpan di server, bukan di kode yang berjalan di browser.</p>
+        <p>Di aplikasi ini API key Netra dan Deepgram dipakai langsung dari browser. Siapa pun yang membuka DevTools di komputer itu bisa melihat key-nya. Dokumentasi Netra sendiri meminta key disimpan di server, bukan di kode yang berjalan di browser.</p>
         <ul>
           <li>Pakai pola ini hanya untuk belajar di komputer sendiri.</li>
           <li>Jangan unggah API key ke GitHub, dan jangan mengirimnya lewat chat.</li>
-          <li>Kalau key tersebar, cabut (revoke) key itu di dashboard Netra lalu buat yang baru.</li>
-          <li>Untuk website sungguhan, buat server kecil yang menyimpan key dan meneruskan permintaan ke Netra.</li>
+          <li>Kalau key tersebar, cabut (revoke) key itu di dashboard Netra atau Deepgram Console, lalu buat yang baru.</li>
+          <li>Untuk website sungguhan, buat server kecil yang menyimpan key dan meneruskan permintaan ke Netra dan Deepgram. Deepgram juga menyediakan <a href="https://developers.deepgram.com/guides/fundamentals/token-based-authentication">token sementara</a> yang dibuat server dan hanya berlaku sebentar, sehingga API key asli tidak pernah sampai ke browser.</li>
+          <li>Rekaman suara pelanggan dikirim ke server Deepgram untuk diubah menjadi teks. Beri tahu pengguna sebelum mereka merekam, dan jangan minta mereka menyebut data rahasia seperti PIN atau nomor kartu.</li>
         </ul>
       </section>
 
@@ -652,6 +1125,17 @@ function loadPdfJs() {
           <li>Tampilkan 100 karakter pertama teks setiap PDF di bawah nama filenya, supaya pemilik toko bisa memastikan teksnya terbaca benar. Petunjuk: <code>doc.text.slice(0, 100)</code>.</li>
           <li>Tantangan: tampilkan jawaban sedikit demi sedikit dengan streaming. Baca <a href="https://netra.sh/docs/streaming">panduan streaming Netra</a>.</li>
         </ol>
+        <h4>Tingkat 3</h4>
+        <ol>
+          <li>Jangan langsung kirim hasil rekaman. Masukkan teksnya ke kolom pertanyaan saja, supaya pelanggan bisa memperbaikinya sebelum menekan Kirim. Petunjuk: hapus baris <code>el.chatForm.requestSubmit()</code> di <code>handleRecording</code>.</li>
+          <li>Tampilkan lama rekaman dalam detik selagi merekam. Petunjuk: <code>setInterval</code>, seperti jam di bar panggilan Tingkat 4.</li>
+        </ol>
+        <h4>Tingkat 4</h4>
+        <ol>
+          <li>Ganti suara agent, misalnya ke <code>aura-2-thalia-en</code> atau <code>aura-2-nestor-es</code>, lalu bandingkan mana yang paling jelas membaca bahasa Indonesia. Daftar suaranya ada di <a href="https://developers.deepgram.com/docs/tts-models">dokumentasi suara Deepgram</a>.</li>
+          <li>Buat agent menjawab lebih cepat saat telepon dengan mematikan reasoning khusus untuk panggilan. Petunjuk: tambahkan parameter baru di <code>askAgent</code>.</li>
+          <li>Tantangan: biarkan pelanggan memotong agent yang sedang bicara. Petunjuk: jangan jeda perekam, tambahkan <code>vad_events=true</code> di URL WebSocket, lalu hentikan suara agent saat Deepgram mengirim pesan <code>SpeechStarted</code>. Pakai headset, supaya suara agent tidak tertangkap mikrofon.</li>
+        </ol>
       </section>
     </article>
     </div>
@@ -662,7 +1146,7 @@ function loadPdfJs() {
   <footer id="app-footer" class="border-t-3 border-black bg-white">
     <div class="mx-auto max-w-6xl space-y-2 px-4 py-6 text-sm">
       <p>Contoh project belajar: HTML, Tailwind, dan JavaScript tanpa server. API key tersimpan di browser, jadi jangan pakai pola ini untuk website publik.</p>
-      <p>Referensi: <a class="font-bold underline decoration-2 underline-offset-2 hover:bg-accent" href="https://netra.sh/docs/">dokumentasi Netra</a>, <a class="font-bold underline decoration-2 underline-offset-2 hover:bg-accent" href="https://mozilla.github.io/pdf.js/">pdf.js</a>, dan <a class="font-bold underline decoration-2 underline-offset-2 hover:bg-accent" href="https://tailwindcss.com/docs">dokumentasi Tailwind CSS</a>.</p>
+      <p>Referensi: <a class="font-bold underline decoration-2 underline-offset-2 hover:bg-accent" href="https://netra.sh/docs/">dokumentasi Netra</a>, <a class="font-bold underline decoration-2 underline-offset-2 hover:bg-accent" href="https://mozilla.github.io/pdf.js/">pdf.js</a>, <a class="font-bold underline decoration-2 underline-offset-2 hover:bg-accent" href="https://developers.deepgram.com/docs/">dokumentasi Deepgram</a>, dan <a class="font-bold underline decoration-2 underline-offset-2 hover:bg-accent" href="https://tailwindcss.com/docs">dokumentasi Tailwind CSS</a>.</p>
     </div>
   </footer>
 
@@ -677,8 +1161,27 @@ const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/
 // Sekitar 15 ribu token. Konteks yang lebih panjang dipotong agar permintaan tidak ditolak.
 const MAX_CONTEXT_CHARS = 60000;
 
+// nova-3 adalah model speech to text Deepgram yang paling akurat untuk pemakaian umum. language=id: Bahasa Indonesia.
+const DEEPGRAM_LISTEN_URL = 'https://api.deepgram.com/v1/listen?model=nova-3&language=id&smart_format=true';
+const MAX_RECORDING_SECONDS = 60;
+
+// Versi streaming untuk panggilan. endpointing=500: potongan kalimat baru ditutup setelah diam 0,5 detik.
+// Deepgram mengirim UtteranceEnd setelah pelanggan diam 1 detik.
+const DEEPGRAM_LIVE_URL = 'wss://api.deepgram.com/v1/listen?model=nova-3&language=id&smart_format=true&interim_results=true&endpointing=500&utterance_end_ms=1000';
+// Deepgram belum punya suara Bahasa Indonesia. Suara Italia ini paling jelas saat membacakan teks Indonesia.
+const DEEPGRAM_SPEAK_URL = 'https://api.deepgram.com/v1/speak?model=aura-2-livia-it';
+const MAX_SPEAK_CHARS = 2000;
+const CALL_GREETING = 'Halo, terima kasih sudah menelepon. Ada yang bisa saya bantu?';
+const CALL_RULES = [
+  'Pelanggan sedang menelepon, jadi jawabanmu akan dibacakan dengan suara.',
+  'Jawab paling banyak tiga kalimat pendek.',
+  'Tulis angka, jam, dan harga dengan huruf, misalnya sepuluh ribu rupiah atau pukul sembilan pagi.',
+  'Jangan memakai daftar, tanda bintang, atau simbol lain.',
+].join('\n');
+
 const STORAGE = {
   apiKey: 'csagent.apiKey',
+  deepgramKey: 'csagent.deepgramKey',
   model: 'csagent.model',
   contextText: 'csagent.contextText',
 };
@@ -689,6 +1192,8 @@ const state = {
   history: [], // { role: 'user' | 'assistant', content }
   isSending: false,
   error: '',
+  voiceStatus: 'idle', // 'idle' | 'recording' | 'transcribing'
+  callStatus: 'off', // 'off' | 'connecting' | 'listening' | 'thinking' | 'speaking'
 };
 
 const el = {
@@ -707,6 +1212,16 @@ const el = {
   chatInput: document.getElementById('chat-input'),
   sendButton: document.getElementById('btn-send'),
   clearButton: document.getElementById('btn-clear-chat'),
+  deepgramKey: document.getElementById('deepgram-key'),
+  toggleDeepgramKey: document.getElementById('btn-toggle-deepgram-key'),
+  rememberDeepgramKey: document.getElementById('remember-deepgram-key'),
+  micButton: document.getElementById('btn-mic'),
+  callButton: document.getElementById('btn-call'),
+  callBar: document.getElementById('call-bar'),
+  callStatusText: document.getElementById('call-status'),
+  callTranscript: document.getElementById('call-transcript'),
+  callClock: document.getElementById('call-clock'),
+  endCallButton: document.getElementById('btn-end-call'),
 };
 
 // localStorage bisa melempar error (misalnya mode privat), jadi selalu dibungkus try/catch.
@@ -913,7 +1428,7 @@ function buildSystemPrompt() {
 
 function describeApiError(status, data) {
   const detail = data?.error?.message;
-  if (status === 401 || status === 403) return 'API key ditolak. Periksa lagi API key Anda.';
+  if (status === 401 || status === 403) return 'API key Netra ditolak. Periksa lagi API key Netra Anda.';
   if (status === 402) return 'Saldo atau kuota API habis.';
   if (status === 429) return 'Terlalu banyak permintaan. Tunggu sebentar, lalu kirim lagi.';
   if (status >= 500) return 'Server Netra sedang bermasalah. Coba lagi beberapa saat lagi.';
@@ -975,11 +1490,12 @@ function createBubble(role, text) {
 function renderMessages() {
   el.chatMessages.replaceChildren();
 
-  if (state.history.length === 0 && !state.isSending && !state.error) {
+  const isIdle = !state.isSending && state.voiceStatus === 'idle' && state.callStatus === 'off';
+  if (state.history.length === 0 && isIdle && !state.error) {
     const empty = document.createElement('div');
     empty.className = 'mx-auto mt-6 max-w-sm border-2 border-dashed border-black p-6 text-center text-sm';
     empty.innerHTML = '<p class="font-bold text-lg">Belum ada percakapan</p>'
-      + '<p class="mt-1">Isi API key dan konteks di panel Pengaturan, lalu kirim pertanyaan seolah-olah Anda pelanggan.</p>';
+      + '<p class="mt-1">Isi API key dan konteks di panel Pengaturan. Setelah itu ketik pertanyaan, tekan Rekam, atau tekan Telepon seolah-olah Anda pelanggan.</p>';
     el.chatMessages.append(empty);
   }
 
@@ -994,6 +1510,15 @@ function renderMessages() {
     el.chatMessages.append(loading);
   }
 
+  if (state.voiceStatus !== 'idle') {
+    const voice = document.createElement('p');
+    voice.className = 'inline-block border-2 border-black bg-paper px-3 py-2 text-sm font-bold';
+    voice.textContent = state.voiceStatus === 'recording'
+      ? `Merekam suara. Tekan Selesai kalau sudah, paling lama ${MAX_RECORDING_SECONDS} detik.`
+      : 'Mengubah suara menjadi teks...';
+    el.chatMessages.append(voice);
+  }
+
   if (state.error) {
     const error = document.createElement('div');
     error.className = 'border-2 border-black bg-red-100 p-3 text-sm font-bold';
@@ -1002,20 +1527,38 @@ function renderMessages() {
   }
 
   el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
-  el.clearButton.disabled = state.history.length === 0 || state.isSending;
+  el.clearButton.disabled = state.history.length === 0 || !isIdle;
+}
+
+const MIC_LABELS = { idle: 'Rekam', recording: 'Selesai', transcribing: 'Tunggu...' };
+
+// Chat ketik, rekaman, dan panggilan tidak boleh berjalan bersamaan, jadi tombolnya diatur dari state.
+function renderChatControls() {
+  const isBusy = state.isSending || state.voiceStatus !== 'idle' || state.callStatus !== 'off';
+  el.sendButton.disabled = isBusy;
+  el.sendButton.textContent = state.isSending ? 'Mengirim...' : 'Kirim';
+  el.micButton.disabled = state.isSending || state.voiceStatus === 'transcribing' || state.callStatus !== 'off';
+  el.micButton.textContent = MIC_LABELS[state.voiceStatus];
+  el.micButton.classList.toggle('btn-live', state.voiceStatus === 'recording');
+  el.callButton.disabled = isBusy;
+  el.chatForm.setAttribute('aria-busy', String(state.isSending || state.voiceStatus === 'transcribing'));
 }
 
 function setSending(isSending) {
   state.isSending = isSending;
-  el.sendButton.disabled = isSending;
-  el.sendButton.textContent = isSending ? 'Mengirim...' : 'Kirim';
-  el.chatForm.setAttribute('aria-busy', String(isSending));
+  renderChatControls();
   renderMessages();
+}
+
+function showError(message) {
+  state.error = message;
+  renderMessages();
+  el.chatStatus.textContent = message;
 }
 
 async function handleSubmit(event) {
   event.preventDefault();
-  if (state.isSending) return;
+  if (state.isSending || state.voiceStatus !== 'idle' || state.callStatus !== 'off') return;
 
   const question = el.chatInput.value.trim();
   const apiKey = el.apiKey.value.trim();
@@ -1026,9 +1569,7 @@ async function handleSubmit(event) {
     return;
   }
   if (!apiKey) {
-    state.error = 'Isi API key dulu di panel Pengaturan.';
-    renderMessages();
-    el.chatStatus.textContent = state.error;
+    showError('Isi API key Netra dulu di panel Pengaturan.');
     el.apiKey.focus();
     return;
   }
@@ -1057,22 +1598,421 @@ async function handleSubmit(event) {
   }
 }
 
+/* Rekam suara lalu ubah menjadi teks (Tingkat 3) */
+
+let recorder = null;
+let recordingTimer = null;
+
+function describeMicError(error) {
+  if (error.name === 'NotAllowedError') return 'Izin mikrofon ditolak. Klik ikon di kiri alamat web, izinkan Mikrofon, lalu coba lagi.';
+  if (error.name === 'NotFoundError') return 'Mikrofon tidak ditemukan. Pasang mikrofon atau headset, lalu coba lagi.';
+  if (error.name === 'NotReadableError') return 'Mikrofon sedang dipakai aplikasi lain. Tutup aplikasi itu, lalu coba lagi.';
+  return 'Mikrofon tidak bisa dipakai. Muat ulang halaman, lalu coba lagi.';
+}
+
+// Meminta izin lalu membuka mikrofon. Dipakai tombol Rekam dan tombol Telepon.
+async function getMicrophone() {
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    throw new Error('Browser ini tidak bisa merekam suara. Pakai Chrome atau Edge versi terbaru.');
+  }
+  try {
+    return await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (error) {
+    throw new Error(describeMicError(error));
+  }
+}
+
+function describeDeepgramError(status, data) {
+  const detail = data?.err_msg;
+  if (status === 401 || status === 403) return 'API key Deepgram ditolak. Periksa lagi API key Deepgram Anda.';
+  if (status === 402) return 'Saldo Deepgram habis.';
+  if (status === 429) return 'Terlalu banyak permintaan ke Deepgram. Tunggu sebentar, lalu coba lagi.';
+  if (status >= 500) return 'Server Deepgram sedang bermasalah. Coba lagi beberapa saat lagi.';
+  return `Deepgram menolak permintaan (kode ${status})${detail ? `: ${detail}` : '.'}`;
+}
+
+async function transcribeAudio(apiKey, audio) {
+  let response;
+  try {
+    response = await fetch(DEEPGRAM_LISTEN_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${apiKey}`,
+        'Content-Type': audio.type,
+      },
+      body: audio, // file rekaman dikirim apa adanya, bukan JSON
+    });
+  } catch {
+    throw new Error('Tidak bisa terhubung ke server Deepgram. Periksa koneksi internet.');
+  }
+
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(describeDeepgramError(response.status, data));
+
+  const text = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim();
+  if (!text) throw new Error('Suara tidak terdengar jelas. Dekatkan mikrofon, lalu rekam ulang.');
+  return text;
+}
+
+async function startRecording() {
+  const stream = await getMicrophone();
+  const chunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.addEventListener('dataavailable', (event) => {
+    if (event.data.size > 0) chunks.push(event.data);
+  });
+  recorder.addEventListener('stop', () => {
+    stream.getTracks().forEach((track) => track.stop()); // mematikan mikrofon
+    const audio = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
+    recorder = null;
+    handleRecording(audio);
+  });
+  recorder.start();
+  // Rekaman berhenti sendiri setelah batas waktu, supaya mikrofon tidak lupa dimatikan.
+  recordingTimer = setTimeout(stopRecording, MAX_RECORDING_SECONDS * 1000);
+}
+
+function stopRecording() {
+  clearTimeout(recordingTimer);
+  if (recorder?.state === 'recording') recorder.stop();
+}
+
+function setVoiceStatus(status) {
+  state.voiceStatus = status;
+  renderChatControls();
+  renderMessages();
+}
+
+async function handleRecording(audio) {
+  setVoiceStatus('transcribing');
+  el.chatStatus.textContent = 'Mengubah suara menjadi teks.';
+  try {
+    const text = await transcribeAudio(el.deepgramKey.value.trim(), audio);
+    setVoiceStatus('idle');
+    // Teks hasil rekaman dikirim lewat form chat, sama seperti pertanyaan yang diketik.
+    el.chatInput.value = text;
+    el.chatForm.requestSubmit();
+  } catch (error) {
+    setVoiceStatus('idle');
+    showError(error.message);
+  }
+}
+
+async function handleMicClick() {
+  if (state.voiceStatus === 'recording') {
+    stopRecording();
+    return;
+  }
+  if (!el.deepgramKey.value.trim()) {
+    showError('Isi API key Deepgram dulu di panel Pengaturan.');
+    el.deepgramKey.focus();
+    return;
+  }
+
+  el.micButton.disabled = true; // mencegah klik ganda selama browser meminta izin mikrofon
+  try {
+    await startRecording();
+  } catch (error) {
+    renderChatControls();
+    showError(error.message);
+    return;
+  }
+  state.error = '';
+  setVoiceStatus('recording');
+  el.chatStatus.textContent = 'Merekam. Tekan Selesai kalau sudah bicara.';
+}
+
+/* Panggilan suara (Tingkat 4) */
+
+// Benda-benda yang hidup selama panggilan. Statusnya sendiri ada di state.callStatus.
+const call = {
+  socket: null,
+  stream: null,
+  recorder: null,
+  audio: null,
+  heardText: '', // kalimat pelanggan yang sudah final
+  interimText: '', // potongan kalimat yang masih bisa berubah
+  turnEnded: false, // Deepgram sudah mengirim UtteranceEnd
+  startedAt: 0,
+  clockTimer: null,
+  keepAliveTimer: null,
+};
+
+const CALL_LABELS = {
+  connecting: 'Menyambungkan...',
+  listening: 'Silakan bicara. Agent mendengarkan.',
+  thinking: 'Agent sedang menyiapkan jawaban...',
+  speaking: 'Agent sedang bicara...',
+};
+
+function setCallStatus(status) {
+  state.callStatus = status;
+  const inCall = status !== 'off';
+  el.callBar.hidden = !inCall;
+  el.chatForm.hidden = inCall;
+  el.callStatusText.textContent = CALL_LABELS[status] || '';
+  if (status !== 'listening') el.callTranscript.textContent = '';
+  renderChatControls();
+  renderMessages();
+}
+
+function renderCallClock() {
+  const seconds = Math.floor((Date.now() - call.startedAt) / 1000);
+  const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
+  el.callClock.textContent = `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+function openDeepgramSocket(apiKey) {
+  return new Promise((resolve, reject) => {
+    // Browser tidak bisa menambah header Authorization ke WebSocket, jadi API key dikirim lewat subprotocol.
+    const socket = new WebSocket(DEEPGRAM_LIVE_URL, ['token', apiKey]);
+    socket.addEventListener('open', () => resolve(socket));
+    socket.addEventListener('error', () => {
+      reject(new Error('Panggilan gagal tersambung ke Deepgram. Periksa API key Deepgram dan koneksi internet.'));
+    });
+  });
+}
+
+async function requestSpeech(apiKey, text) {
+  let response;
+  try {
+    response = await fetch(DEEPGRAM_SPEAK_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: text.slice(0, MAX_SPEAK_CHARS) }),
+    });
+  } catch {
+    throw new Error('Tidak bisa terhubung ke server Deepgram. Periksa koneksi internet.');
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(describeDeepgramError(response.status, data));
+  }
+  return response; // isinya suara MP3 yang dikirim sedikit demi sedikit
+}
+
+const CAN_STREAM_MP3 = window.MediaSource?.isTypeSupported('audio/mpeg') ?? false;
+
+// Suara diputar sambil potongan berikutnya masih diunduh, jadi agent mulai bicara lebih cepat.
+function streamAudio(response) {
+  const mediaSource = new MediaSource();
+  const audio = new Audio(URL.createObjectURL(mediaSource));
+  mediaSource.addEventListener('sourceopen', async () => {
+    const buffer = mediaSource.addSourceBuffer('audio/mpeg');
+    const reader = response.body.getReader();
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer.appendBuffer(value);
+        await new Promise((resolve) => buffer.addEventListener('updateend', resolve, { once: true }));
+      }
+      mediaSource.endOfStream();
+    } catch {
+      if (mediaSource.readyState === 'open') mediaSource.endOfStream('network');
+    }
+  }, { once: true });
+  return audio;
+}
+
+// Browser yang belum mendukung MediaSource untuk MP3 menunggu file suaranya lengkap dulu.
+async function createAgentAudio(response) {
+  if (CAN_STREAM_MP3) return streamAudio(response);
+  return new Audio(URL.createObjectURL(await response.blob()));
+}
+
+// Promise selesai saat suara habis diputar, atau saat dihentikan karena panggilan ditutup.
+function playAudio(audio) {
+  call.audio = audio;
+  return new Promise((resolve, reject) => {
+    const finish = () => {
+      URL.revokeObjectURL(audio.src);
+      resolve();
+    };
+    audio.addEventListener('ended', finish);
+    audio.addEventListener('pause', finish);
+    audio.addEventListener('error', () => reject(new Error('Suara agent tidak bisa diputar.')));
+    audio.play().catch(() => reject(new Error('Browser menahan suara agent. Klik halaman ini, lalu telepon lagi.')));
+  });
+}
+
+// Selama agent berpikir dan bicara, rekaman dijeda supaya suara agent tidak terdengar sebagai suara pelanggan.
+function pauseListening() {
+  if (call.recorder?.state === 'recording') call.recorder.pause();
+}
+
+function resumeListening() {
+  call.heardText = '';
+  call.interimText = '';
+  call.turnEnded = false;
+  if (call.recorder?.state === 'paused') call.recorder.resume();
+  setCallStatus('listening');
+}
+
+async function agentSays(text) {
+  try {
+    const response = await requestSpeech(el.deepgramKey.value.trim(), text);
+    const audio = await createAgentAudio(response);
+    if (state.callStatus === 'off') return;
+    setCallStatus('speaking');
+    await playAudio(audio);
+  } catch (error) {
+    endCall(error.message);
+    return;
+  }
+  if (state.callStatus !== 'off') resumeListening();
+}
+
+async function answerCustomer(question) {
+  pauseListening();
+  state.history.push({ role: 'user', content: question });
+  setCallStatus('thinking');
+
+  const messages = [
+    { role: 'system', content: `${buildSystemPrompt()}\n\n${CALL_RULES}` },
+    ...state.history,
+  ];
+  let reply;
+  try {
+    reply = await askAgent(el.apiKey.value.trim(), el.model.value.trim() || DEFAULT_MODEL, messages);
+  } catch (error) {
+    state.history.pop();
+    endCall(error.message);
+    return;
+  }
+  state.history.push({ role: 'assistant', content: reply });
+  renderMessages();
+  if (state.callStatus !== 'off') await agentSays(reply);
+}
+
+function handleCallMessage(event) {
+  // Selama agent berpikir atau bicara, hasil dari Deepgram diabaikan.
+  if (state.callStatus !== 'listening') return;
+  const data = JSON.parse(event.data);
+
+  if (data.type === 'Results') {
+    const text = data.channel.alternatives[0].transcript;
+    // Hasil sementara (is_final false) masih bisa berubah, jadi hanya hasil final yang disimpan.
+    if (data.is_final) {
+      if (text) call.heardText = `${call.heardText} ${text}`.trim();
+      call.interimText = '';
+    } else {
+      call.interimText = text;
+    }
+    el.callTranscript.textContent = `${call.heardText} ${call.interimText}`.trim();
+  }
+
+  // UtteranceEnd: pelanggan sudah diam 1 detik setelah kata terakhir.
+  if (data.type === 'UtteranceEnd' && (call.heardText || call.interimText)) call.turnEnded = true;
+
+  // UtteranceEnd kadang datang sebelum hasil final kalimat terakhir, jadi tunggu sampai tidak ada teks sementara.
+  if (call.turnEnded && !call.interimText && call.heardText) answerCustomer(call.heardText);
+}
+
+async function startCall() {
+  if (!el.apiKey.value.trim()) {
+    showError('Isi API key Netra dulu di panel Pengaturan.');
+    el.apiKey.focus();
+    return;
+  }
+  const deepgramKey = el.deepgramKey.value.trim();
+  if (!deepgramKey) {
+    showError('Isi API key Deepgram dulu di panel Pengaturan.');
+    el.deepgramKey.focus();
+    return;
+  }
+
+  state.error = '';
+  setCallStatus('connecting');
+  el.endCallButton.focus();
+
+  let stream = null;
+  let socket = null;
+  try {
+    stream = await getMicrophone();
+    socket = await openDeepgramSocket(deepgramKey);
+  } catch (error) {
+    stream?.getTracks().forEach((track) => track.stop());
+    endCall(error.message);
+    return;
+  }
+  // Pelanggan bisa menekan Akhiri panggilan saat masih menyambungkan.
+  if (state.callStatus === 'off') {
+    stream.getTracks().forEach((track) => track.stop());
+    socket.close();
+    return;
+  }
+
+  call.stream = stream;
+  call.socket = socket;
+  socket.addEventListener('message', handleCallMessage);
+  socket.addEventListener('close', () => endCall('Panggilan terputus. Periksa koneksi internet, lalu telepon lagi.'));
+
+  call.recorder = new MediaRecorder(stream);
+  call.recorder.addEventListener('dataavailable', (event) => {
+    if (event.data.size > 0 && call.socket?.readyState === WebSocket.OPEN) call.socket.send(event.data);
+  });
+  call.recorder.start(250); // potongan audio dikirim ke Deepgram setiap 250 milidetik
+  // Deepgram menutup koneksi yang 10 detik tidak menerima apa pun, misalnya saat rekaman dijeda.
+  call.keepAliveTimer = setInterval(() => {
+    if (call.socket?.readyState === WebSocket.OPEN) call.socket.send(JSON.stringify({ type: 'KeepAlive' }));
+  }, 5000);
+  call.startedAt = Date.now();
+  renderCallClock();
+  call.clockTimer = setInterval(renderCallClock, 1000);
+
+  pauseListening();
+  state.history.push({ role: 'assistant', content: CALL_GREETING });
+  renderMessages();
+  await agentSays(CALL_GREETING);
+}
+
+function endCall(errorMessage = '') {
+  if (state.callStatus === 'off') return;
+  clearInterval(call.clockTimer);
+  clearInterval(call.keepAliveTimer);
+  if (call.recorder && call.recorder.state !== 'inactive') call.recorder.stop();
+  call.stream?.getTracks().forEach((track) => track.stop());
+  if (call.socket?.readyState === WebSocket.OPEN) call.socket.send(JSON.stringify({ type: 'CloseStream' }));
+  call.socket?.close();
+  call.audio?.pause();
+  Object.assign(call, { socket: null, stream: null, recorder: null, audio: null });
+
+  state.error = errorMessage;
+  setCallStatus('off');
+  el.chatStatus.textContent = errorMessage || 'Panggilan selesai.';
+  el.callButton.focus();
+}
+
 /* Event dan pemulihan data tersimpan */
 
-el.toggleKey.addEventListener('click', () => {
-  const isHidden = el.apiKey.type === 'password';
-  el.apiKey.type = isHidden ? 'text' : 'password';
-  el.toggleKey.textContent = isHidden ? 'Sembunyikan' : 'Tampilkan';
-  el.toggleKey.setAttribute('aria-pressed', String(isHidden));
-});
+// Kolom API key Netra dan Deepgram punya perilaku yang sama: tombol Tampilkan dan pilihan Simpan.
+function setupKeyField(input, toggle, remember, storageKey) {
+  toggle.addEventListener('click', () => {
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    toggle.textContent = isHidden ? 'Sembunyikan' : 'Tampilkan';
+    toggle.setAttribute('aria-pressed', String(isHidden));
+  });
+  remember.addEventListener('change', () => {
+    writeStorage(storageKey, remember.checked ? input.value.trim() : '');
+  });
+  input.addEventListener('input', () => {
+    if (remember.checked) writeStorage(storageKey, input.value.trim());
+  });
 
-el.rememberKey.addEventListener('change', () => {
-  writeStorage(STORAGE.apiKey, el.rememberKey.checked ? el.apiKey.value.trim() : '');
-});
+  const savedKey = readStorage(storageKey);
+  if (savedKey) {
+    input.value = savedKey;
+    remember.checked = true;
+  }
+}
 
-el.apiKey.addEventListener('input', () => {
-  if (el.rememberKey.checked) writeStorage(STORAGE.apiKey, el.apiKey.value.trim());
-});
+setupKeyField(el.apiKey, el.toggleKey, el.rememberKey, STORAGE.apiKey);
+setupKeyField(el.deepgramKey, el.toggleDeepgramKey, el.rememberDeepgramKey, STORAGE.deepgramKey);
 
 el.model.addEventListener('change', () => {
   writeStorage(STORAGE.model, el.model.value.trim());
@@ -1086,6 +2026,9 @@ el.contextText.addEventListener('input', () => {
 el.pdfInput.addEventListener('change', () => handlePdfFiles(el.pdfInput.files));
 
 el.chatForm.addEventListener('submit', handleSubmit);
+el.micButton.addEventListener('click', handleMicClick);
+el.callButton.addEventListener('click', startCall);
+el.endCallButton.addEventListener('click', () => endCall());
 
 el.chatInput.addEventListener('keydown', (event) => {
   // isComposing dicek agar Enter saat mengetik dengan IME tidak langsung mengirim.
@@ -1123,11 +2066,6 @@ document.querySelectorAll('[data-copy]').forEach((button) => {
   });
 });
 
-const savedKey = readStorage(STORAGE.apiKey);
-if (savedKey) {
-  el.apiKey.value = savedKey;
-  el.rememberKey.checked = true;
-}
 el.model.value = readStorage(STORAGE.model) || DEFAULT_MODEL;
 el.contextText.value = readStorage(STORAGE.contextText) || '';
 
