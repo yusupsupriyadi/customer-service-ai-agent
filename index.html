@@ -412,6 +412,7 @@
   const context = buildContext().slice(0, MAX_CONTEXT_CHARS);
   const rules = [
     'Kamu adalah customer service yang ramah, sopan, dan membantu.',
+    'Bicara hangat dan natural seperti customer service manusia, bukan seperti robot. Panggil pelanggan "Kak".',
     'Jawab pertanyaan pelanggan hanya berdasarkan informasi di bagian KONTEKS.',
     'Jika informasinya tidak ada di KONTEKS, katakan terus terang bahwa kamu belum punya informasi itu, lalu sarankan pelanggan menghubungi admin.',
     'Jangan mengarang harga, stok, promo, atau kebijakan.',
@@ -421,7 +422,7 @@
   return `${rules.join('\n')}\n\nKONTEKS:\n${context || '(kosong, belum ada informasi usaha)'}`;
 }</code></pre>
         </div>
-        <p>Aturan "jawab hanya berdasarkan KONTEKS" mencegah AI mengarang harga atau kebijakan toko. Coba hapus aturan itu, lalu tanyakan sesuatu yang tidak ada di konteks dan bandingkan jawabannya.</p>
+        <p>Aturan kedua mengatur gaya bicara: hangat, natural, dan memanggil pelanggan "Kak", supaya agent tidak terdengar seperti robot. Aturan "jawab hanya berdasarkan KONTEKS" mencegah AI mengarang harga atau kebijakan toko. Coba hapus aturan itu, lalu tanyakan sesuatu yang tidak ada di konteks dan bandingkan jawabannya.</p>
         <p>Konteks dipotong di 60.000 karakter (<code>MAX_CONTEXT_CHARS</code>). Makin panjang konteks, makin banyak token yang dipakai, dan makin besar biayanya.</p>
       </section>
 
@@ -915,9 +916,14 @@ call.keepAliveTimer = setInterval(() =&gt; {
         <p>Fungsi <code>answerCustomer</code> mengirim teks pelanggan ke Netra, sama seperti chat. Bedanya, system prompt ditambah aturan khusus telepon:</p>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-call-rules">Salin</button></div>
-          <pre class="code-pre"><code id="code-call-rules">const CALL_RULES = [
+          <pre class="code-pre"><code id="code-call-rules">// Agent di telepon memperkenalkan diri dengan nama yang sama dengan suaranya.
+const AGENT_NAME = 'Fitri';
+const CALL_RULES = [
+  `Namamu ${AGENT_NAME}.`,
   'Pelanggan sedang menelepon, jadi jawabanmu akan dibacakan dengan suara.',
-  'Jawab paling banyak tiga kalimat pendek.',
+  'Pakai bahasa lisan sehari-hari yang tetap sopan, misalnya "oke", "nah", atau "ya".',
+  'Jawab paling banyak tiga kalimat pendek dan langsung ke intinya.',
+  'Jangan membuka jawaban dengan sapaan atau ucapan terima kasih sudah menunggu, karena aplikasi sudah mengucapkannya.',
   'Tulis angka, jam, dan harga dengan huruf, misalnya sepuluh ribu rupiah atau pukul sembilan pagi.',
   'Jangan memakai daftar, tanda bintang, atau simbol lain.',
 ].join('\n');</code></pre>
@@ -929,7 +935,7 @@ call.keepAliveTimer = setInterval(() =&gt; {
   ...state.history,
 ];</code></pre>
         </div>
-        <p>Aturan menulis angka dengan huruf ada alasannya. Saat diuji, suara agent membaca "Rp10.000" dengan benar, tetapi jam "17.00" dibaca "satu tujuh ribu". Tulisan "pukul lima sore" selalu dibaca sesuai tulisannya.</p>
+        <p>Aturan bahasa lisan membuat jawaban terdengar seperti orang yang sedang bicara, bukan seperti tulisan yang dibacakan. Aturan menulis angka dengan huruf juga ada alasannya. Saat diuji, suara agent membaca "Rp10.000" dengan benar, tetapi jam "17.00" dibaca "satu tujuh ribu". Tulisan "pukul lima sore" selalu dibaca sesuai tulisannya.</p>
         <p>Jawaban dari Netra lalu dikirim ke text to speech Deepgram. Contoh curl-nya:</p>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">terminal</span><button type="button" class="copy-btn" data-copy="code-curl-speak">Salin</button></div>
@@ -945,7 +951,7 @@ call.keepAliveTimer = setInterval(() =&gt; {
           <pre class="code-pre"><code id="code-speak-url">// Text to speech Flux dengan suara Fitri (Bahasa Indonesia). Model Flux hanya tersedia di /v2/speak.
 const DEEPGRAM_SPEAK_URL = 'https://api.deepgram.com/v2/speak?model=flux-fitri-id&amp;encoding=mp3';</code></pre>
         </div>
-        <p>Fungsi <code>agentSays</code> meminta suara, memutarnya, lalu kembali mendengarkan. Sebelum itu, <code>answerCustomer</code> sudah menjeda perekam lewat <code>pauseListening</code>, supaya suara agent dari speaker tidak ikut terekam lalu dianggap sebagai suara pelanggan.</p>
+        <p>Fungsi <code>speak</code> meminta suara lalu memutarnya, dan <code>agentSays</code> memakai <code>speak</code> lalu kembali mendengarkan. Sebelum itu, <code>answerCustomer</code> sudah menjeda perekam lewat <code>pauseListening</code>, supaya suara agent dari speaker tidak ikut terekam lalu dianggap sebagai suara pelanggan.</p>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-agent-says">Salin</button></div>
           <pre class="code-pre"><code id="code-agent-says">// Selama agent berpikir dan bicara, rekaman dijeda supaya suara agent tidak terdengar sebagai suara pelanggan.
@@ -961,13 +967,19 @@ function resumeListening() {
   setCallStatus('listening');
 }
 
+// Agent membacakan teks. Kalimat jeda diambil dari cache, jawaban biasa diputar sambil diunduh.
+async function speak(text, fromCache = false) {
+  const audio = fromCache
+    ? new Audio(URL.createObjectURL(await getLineAudio(text)))
+    : await createAgentAudio(await requestSpeech(el.deepgramKey.value.trim(), text));
+  if (state.callStatus === 'off') return;
+  setCallStatus('speaking');
+  await playAudio(audio);
+}
+
 async function agentSays(text) {
   try {
-    const response = await requestSpeech(el.deepgramKey.value.trim(), text);
-    const audio = await createAgentAudio(response);
-    if (state.callStatus === 'off') return;
-    setCallStatus('speaking');
-    await playAudio(audio);
+    await speak(text);
   } catch (error) {
     endCall(error.message);
     return;
@@ -1002,15 +1014,92 @@ function streamAudio(response) {
 }</code></pre>
         </div>
         <p>Browser yang belum mendukung cara ini memakai jalur cadangan di <code>createAgentAudio</code>: menunggu file lengkap, baru memutarnya.</p>
+        <h4>Supaya terdengar seperti customer service sungguhan</h4>
+        <p>CS di telepon tidak diam saja selagi mencari jawaban. Mereka bilang "sebentar ya, saya cek dulu", lalu "makasih sudah menunggu" saat kembali. Agent di aplikasi ini meniru kebiasaan itu dengan kalimat yang sudah disiapkan:</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-natural-lines">Salin</button></div>
+          <pre class="code-pre"><code id="code-natural-lines">// Kalimat jeda: agent bilang sedang mengecek, bukan diam saja selagi menunggu jawaban Netra.
+const CHECKING_LINES = [
+  'Oke Kak, sebentar ya, saya cek dulu.',
+  'Baik Kak, saya cek terlebih dahulu ya.',
+  'Hmm, sebentar ya Kak, saya lihat datanya dulu.',
+];
+const STILL_CHECKING_LINE = 'Masih saya cek ya Kak, mohon ditunggu sebentar.';
+const THANKS_FOR_WAITING_LINES = ['Makasih sudah menunggu ya Kak.', 'Oke Kak, sudah saya cek ya.'];
+const CHECKING_DELAY_MS = 1000; // kalimat jeda diucapkan kalau jawaban belum siap setelah 1 detik
+const STILL_CHECKING_DELAY_MS = 6000;
+// Basa-basi pendek seperti "oke makasih" tidak perlu dicek dulu.
+const SMALL_TALK = /^(halo|hai|oke|ok|baik|siap|sip|iya|ya|makasih|terima kasih)\b/i;</code></pre>
+        </div>
+        <p>Kuncinya ada di <code>answerCustomer</code>. Permintaan ke Netra dikirim dulu, tetapi tidak langsung ditunggu. Fungsi <code>settlesWithin</code> memeriksa apakah jawabannya sudah datang dalam 1 detik. Kalau belum, agent mengucapkan kalimat jeda selagi Netra masih bekerja. Kalau setelah itu jawaban belum juga datang dalam 6 detik, agent bilang masih mengecek. Begitu jawaban siap, aplikasi menambahkan "Makasih sudah menunggu ya Kak." di depannya.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-settles">Salin</button></div>
+          <pre class="code-pre"><code id="code-settles">// Hasilnya true kalau promise sudah selesai (berhasil atau gagal) sebelum ms milidetik.
+function settlesWithin(promise, ms) {
+  const settled = promise.then(() =&gt; true, () =&gt; true);
+  const timeout = new Promise((resolve) =&gt; setTimeout(() =&gt; resolve(false), ms));
+  return Promise.race([settled, timeout]);
+}</code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-answer">Salin</button></div>
+          <pre class="code-pre"><code id="code-answer">async function answerCustomer(question) {
+  pauseListening();
+  const historyLength = state.history.length;
+  state.history.push({ role: 'user', content: question });
+  setCallStatus('thinking');
+
+  const messages = [
+    { role: 'system', content: `${buildSystemPrompt()}\n\n${CALL_RULES}` },
+    ...state.history,
+  ];
+  const replyPromise = askAgent(el.apiKey.value.trim(), el.model.value.trim() || DEFAULT_MODEL, messages);
+
+  // Seperti CS sungguhan: kalau jawabannya belum siap, agent bilang sedang mengecek.
+  let waited = false;
+  if (needsChecking(question) &amp;&amp; !(await settlesWithin(replyPromise, CHECKING_DELAY_MS))) {
+    waited = true;
+    await sayWhileChecking(pickRandom(CHECKING_LINES));
+    if (state.callStatus !== 'off' &amp;&amp; !(await settlesWithin(replyPromise, STILL_CHECKING_DELAY_MS))) {
+      await sayWhileChecking(STILL_CHECKING_LINE);
+    }
+  }
+
+  let reply;
+  try {
+    reply = await replyPromise;
+  } catch (error) {
+    state.history.length = historyLength; // pertanyaan dan kalimat jeda yang gagal dijawab dibuang
+    endCall(error.message);
+    return;
+  }
+  if (waited) reply = `${pickRandom(THANKS_FOR_WAITING_LINES)} ${reply}`;
+  state.history.push({ role: 'assistant', content: reply });
+  renderMessages();
+  if (state.callStatus !== 'off') await agentSays(reply);
+}</code></pre>
+        </div>
+        <p>Pertanyaan basa-basi seperti "oke makasih" langsung dijawab tanpa kalimat jeda, karena memang tidak ada yang perlu dicek. Kalimat jeda juga ditampilkan sebagai gelembung chat, jadi riwayat percakapan sama dengan yang didengar pelanggan.</p>
+        <p>Kalimat jeda selalu sama, jadi suaranya diminta sekali saat panggilan dimulai (<code>preloadLines</code>) dan disimpan di <code>call.lineAudio</code>. Saat dibutuhkan, suara itu langsung diputar tanpa menunggu Deepgram.</p>
+        <p>Salam pembuka juga dibuat seperti CS sungguhan: agent memperkenalkan diri dengan namanya, dan salamnya menyesuaikan jam di komputer pelanggan.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-greeting">Salin</button></div>
+          <pre class="code-pre"><code id="code-greeting">function buildGreeting() {
+  const hour = new Date().getHours();
+  const time = hour &lt; 11 ? 'pagi' : hour &lt; 15 ? 'siang' : hour &lt; 18 ? 'sore' : 'malam';
+  return `Halo, selamat ${time}! Dengan ${AGENT_NAME} dari customer service. Ada yang bisa saya bantu, Kak?`;
+}</code></pre>
+        </div>
       </section>
 
       <section id="mencoba-4" aria-labelledby="mencoba-4-title">
         <h3 id="mencoba-4-title">Mencoba Tingkat 4</h3>
         <ol>
           <li>Isi kedua API key dan contoh konteks di <a href="#app-main">aplikasi di bagian atas</a>, lalu tekan Telepon dan izinkan mikrofon.</li>
-          <li>Tunggu agent selesai menyapa sampai muncul tulisan "Silakan bicara. Agent mendengarkan."</li>
-          <li>Tanyakan "Ongkir dalam kota berapa?", lalu diam. Teks yang didengar muncul di bar hitam, dan tidak lama kemudian agent menjawab dengan suara.</li>
-          <li>Tanyakan satu hal lagi, lalu tekan Akhiri panggilan. Seluruh percakapan tetap tersimpan sebagai gelembung chat.</li>
+          <li>Agent menyapa, misalnya "Halo, selamat siang! Dengan Fitri dari customer service." Tunggu sampai muncul tulisan "Silakan bicara. Agent mendengarkan."</li>
+          <li>Tanyakan "Ongkir dalam kota berapa?", lalu diam. Teks yang didengar muncul di bar hitam. Kalau Netra butuh waktu, agent bilang "sebentar ya Kak, saya cek dulu", lalu menjawab sambil berterima kasih karena sudah menunggu.</li>
+          <li>Ucapkan "Oke makasih". Agent seharusnya langsung membalas tanpa bilang sedang mengecek.</li>
+          <li>Tekan Akhiri panggilan. Seluruh percakapan, termasuk kalimat jeda, tetap tersimpan sebagai gelembung chat.</li>
         </ol>
         <p>Agent belum bisa dipotong saat sedang bicara. Tunggu jawabannya selesai, baru bicara lagi.</p>
       </section>
@@ -1148,6 +1237,7 @@ function streamAudio(response) {
         <h4>Tingkat 4</h4>
         <ol>
           <li>Ganti suara agent, misalnya ke suara Indonesia lain <code>flux-dewi-id</code>, lalu bandingkan mana yang lebih enak didengar. Daftar suaranya ada di <a href="https://developers.deepgram.com/docs/flux-tts/voices">dokumentasi suara Flux Deepgram</a>.</li>
+          <li>Tambahkan kalimat jedamu sendiri di <code>CHECKING_LINES</code>, atau ganti nama agent di <code>AGENT_NAME</code>, lalu dengarkan bedanya saat menelepon.</li>
           <li>Buat agent menjawab lebih cepat saat telepon dengan mematikan reasoning khusus untuk panggilan. Petunjuk: tambahkan parameter baru di <code>askAgent</code>.</li>
           <li>Tantangan: biarkan pelanggan memotong agent yang sedang bicara. Petunjuk: jangan jeda perekam, tambahkan <code>vad_events=true</code> di URL WebSocket, lalu hentikan suara agent saat Deepgram mengirim pesan <code>SpeechStarted</code>. Pakai headset, supaya suara agent tidak tertangkap mikrofon.</li>
         </ol>
@@ -1184,10 +1274,14 @@ const MAX_RECORDING_SECONDS = 60;
 // Text to speech Flux dengan suara Fitri (Bahasa Indonesia). Model Flux hanya tersedia di /v2/speak.
 const DEEPGRAM_SPEAK_URL = 'https://api.deepgram.com/v2/speak?model=flux-fitri-id&encoding=mp3';
 const MAX_SPEAK_CHARS = 2000;
-const CALL_GREETING = 'Halo, terima kasih sudah menelepon. Ada yang bisa saya bantu?';
+// Agent di telepon memperkenalkan diri dengan nama yang sama dengan suaranya.
+const AGENT_NAME = 'Fitri';
 const CALL_RULES = [
+  `Namamu ${AGENT_NAME}.`,
   'Pelanggan sedang menelepon, jadi jawabanmu akan dibacakan dengan suara.',
-  'Jawab paling banyak tiga kalimat pendek.',
+  'Pakai bahasa lisan sehari-hari yang tetap sopan, misalnya "oke", "nah", atau "ya".',
+  'Jawab paling banyak tiga kalimat pendek dan langsung ke intinya.',
+  'Jangan membuka jawaban dengan sapaan atau ucapan terima kasih sudah menunggu, karena aplikasi sudah mengucapkannya.',
   'Tulis angka, jam, dan harga dengan huruf, misalnya sepuluh ribu rupiah atau pukul sembilan pagi.',
   'Jangan memakai daftar, tanda bintang, atau simbol lain.',
 ].join('\n');
@@ -1430,6 +1524,7 @@ function buildSystemPrompt() {
   const context = buildContext().slice(0, MAX_CONTEXT_CHARS);
   const rules = [
     'Kamu adalah customer service yang ramah, sopan, dan membantu.',
+    'Bicara hangat dan natural seperti customer service manusia, bukan seperti robot. Panggil pelanggan "Kak".',
     'Jawab pertanyaan pelanggan hanya berdasarkan informasi di bagian KONTEKS.',
     'Jika informasinya tidak ada di KONTEKS, katakan terus terang bahwa kamu belum punya informasi itu, lalu sarankan pelanggan menghubungi admin.',
     'Jangan mengarang harga, stok, promo, atau kebijakan.',
@@ -1805,6 +1900,7 @@ const call = {
   finalText: '', // kalimat pelanggan yang sudah final
   interimText: '', // potongan kalimat yang masih bisa berubah
   turnEnded: false, // Deepgram sudah mengirim UtteranceEnd
+  lineAudio: {}, // suara kalimat jeda yang sudah diminta, supaya tidak diminta ulang
   startedAt: 0,
   clockTimer: null,
   keepAliveTimer: null,
@@ -1813,7 +1909,7 @@ const call = {
 const CALL_LABELS = {
   connecting: 'Menyambungkan...',
   listening: 'Silakan bicara. Agent mendengarkan.',
-  thinking: 'Agent sedang menyiapkan jawaban...',
+  thinking: 'Agent sedang mengecek...',
   speaking: 'Agent sedang bicara...',
 };
 
@@ -1913,13 +2009,19 @@ function resumeListening() {
   setCallStatus('listening');
 }
 
+// Agent membacakan teks. Kalimat jeda diambil dari cache, jawaban biasa diputar sambil diunduh.
+async function speak(text, fromCache = false) {
+  const audio = fromCache
+    ? new Audio(URL.createObjectURL(await getLineAudio(text)))
+    : await createAgentAudio(await requestSpeech(el.deepgramKey.value.trim(), text));
+  if (state.callStatus === 'off') return;
+  setCallStatus('speaking');
+  await playAudio(audio);
+}
+
 async function agentSays(text) {
   try {
-    const response = await requestSpeech(el.deepgramKey.value.trim(), text);
-    const audio = await createAgentAudio(response);
-    if (state.callStatus === 'off') return;
-    setCallStatus('speaking');
-    await playAudio(audio);
+    await speak(text);
   } catch (error) {
     endCall(error.message);
     return;
@@ -1927,8 +2029,73 @@ async function agentSays(text) {
   if (state.callStatus !== 'off') resumeListening();
 }
 
+/* Supaya agent terdengar seperti customer service sungguhan */
+
+// Kalimat jeda: agent bilang sedang mengecek, bukan diam saja selagi menunggu jawaban Netra.
+const CHECKING_LINES = [
+  'Oke Kak, sebentar ya, saya cek dulu.',
+  'Baik Kak, saya cek terlebih dahulu ya.',
+  'Hmm, sebentar ya Kak, saya lihat datanya dulu.',
+];
+const STILL_CHECKING_LINE = 'Masih saya cek ya Kak, mohon ditunggu sebentar.';
+const THANKS_FOR_WAITING_LINES = ['Makasih sudah menunggu ya Kak.', 'Oke Kak, sudah saya cek ya.'];
+const CHECKING_DELAY_MS = 1000; // kalimat jeda diucapkan kalau jawaban belum siap setelah 1 detik
+const STILL_CHECKING_DELAY_MS = 6000;
+// Basa-basi pendek seperti "oke makasih" tidak perlu dicek dulu.
+const SMALL_TALK = /^(halo|hai|oke|ok|baik|siap|sip|iya|ya|makasih|terima kasih)\b/i;
+
+function pickRandom(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function buildGreeting() {
+  const hour = new Date().getHours();
+  const time = hour < 11 ? 'pagi' : hour < 15 ? 'siang' : hour < 18 ? 'sore' : 'malam';
+  return `Halo, selamat ${time}! Dengan ${AGENT_NAME} dari customer service. Ada yang bisa saya bantu, Kak?`;
+}
+
+function needsChecking(question) {
+  return !(question.split(/\s+/).length <= 4 && SMALL_TALK.test(question));
+}
+
+// Hasilnya true kalau promise sudah selesai (berhasil atau gagal) sebelum ms milidetik.
+function settlesWithin(promise, ms) {
+  const settled = promise.then(() => true, () => true);
+  const timeout = new Promise((resolve) => setTimeout(() => resolve(false), ms));
+  return Promise.race([settled, timeout]);
+}
+
+// Kalimat jeda dipakai berulang, jadi suaranya diminta sekali lalu disimpan.
+function getLineAudio(text) {
+  call.lineAudio[text] ??= requestSpeech(el.deepgramKey.value.trim(), text)
+    .then((response) => response.blob())
+    .catch((error) => {
+      delete call.lineAudio[text]; // kalau gagal, boleh diminta ulang nanti
+      throw error;
+    });
+  return call.lineAudio[text];
+}
+
+// Suara semua kalimat jeda disiapkan di belakang layar, satu per satu, saat panggilan dimulai.
+async function preloadLines() {
+  for (const line of [...CHECKING_LINES, STILL_CHECKING_LINE]) {
+    await getLineAudio(line).catch(() => {});
+  }
+}
+
+async function sayWhileChecking(line) {
+  state.history.push({ role: 'assistant', content: line });
+  try {
+    await speak(line, true);
+  } catch {
+    // Kalimat jeda boleh gagal diputar. Jawaban utamanya tetap dibacakan.
+  }
+  if (state.callStatus !== 'off') setCallStatus('thinking');
+}
+
 async function answerCustomer(question) {
   pauseListening();
+  const historyLength = state.history.length;
   state.history.push({ role: 'user', content: question });
   setCallStatus('thinking');
 
@@ -1936,14 +2103,27 @@ async function answerCustomer(question) {
     { role: 'system', content: `${buildSystemPrompt()}\n\n${CALL_RULES}` },
     ...state.history,
   ];
+  const replyPromise = askAgent(el.apiKey.value.trim(), el.model.value.trim() || DEFAULT_MODEL, messages);
+
+  // Seperti CS sungguhan: kalau jawabannya belum siap, agent bilang sedang mengecek.
+  let waited = false;
+  if (needsChecking(question) && !(await settlesWithin(replyPromise, CHECKING_DELAY_MS))) {
+    waited = true;
+    await sayWhileChecking(pickRandom(CHECKING_LINES));
+    if (state.callStatus !== 'off' && !(await settlesWithin(replyPromise, STILL_CHECKING_DELAY_MS))) {
+      await sayWhileChecking(STILL_CHECKING_LINE);
+    }
+  }
+
   let reply;
   try {
-    reply = await askAgent(el.apiKey.value.trim(), el.model.value.trim() || DEFAULT_MODEL, messages);
+    reply = await replyPromise;
   } catch (error) {
-    state.history.pop();
+    state.history.length = historyLength; // pertanyaan dan kalimat jeda yang gagal dijawab dibuang
     endCall(error.message);
     return;
   }
+  if (waited) reply = `${pickRandom(THANKS_FOR_WAITING_LINES)} ${reply}`;
   state.history.push({ role: 'assistant', content: reply });
   renderMessages();
   if (state.callStatus !== 'off') await agentSays(reply);
@@ -2015,10 +2195,13 @@ async function startCall() {
   renderCallClock();
   call.clockTimer = setInterval(renderCallClock, 1000);
 
+  call.lineAudio = {};
+  preloadLines();
   pauseListening();
-  state.history.push({ role: 'assistant', content: CALL_GREETING });
+  const greeting = buildGreeting();
+  state.history.push({ role: 'assistant', content: greeting });
   renderMessages();
-  await agentSays(CALL_GREETING);
+  await agentSays(greeting);
 }
 
 function endCall(errorMessage = '') {

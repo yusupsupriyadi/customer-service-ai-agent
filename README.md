@@ -36,7 +36,7 @@ Perlu koneksi internet, karena Tailwind, pembaca PDF (pdf.js), API Netra, dan AP
 ### Panggilan suara (Tingkat 4)
 
 1. Tombol **Telepon** membuka WebSocket yang sama dan mengirim potongan audio mikrofon setiap 250 milidetik selama panggilan.
-2. Saat Deepgram mengirim `UtteranceEnd` (pelanggan diam 1 detik), teks pelanggan dikirim ke Netra dengan aturan tambahan: jawaban pendek dan angka ditulis dengan huruf.
+2. Saat Deepgram mengirim `UtteranceEnd` (pelanggan diam 1 detik), teks pelanggan dikirim ke Netra dengan aturan tambahan: bahasa lisan yang sopan, jawaban pendek, dan angka ditulis dengan huruf. Kalau jawaban belum siap dalam 1 detik, agent bilang "sebentar ya Kak, saya cek dulu" (dan "masih saya cek" kalau lama), lalu membuka jawaban dengan "makasih sudah menunggu". Agent menyapa sesuai jam dan memperkenalkan diri sebagai Fitri.
 3. Jawaban Netra dibacakan oleh text to speech Flux Deepgram (`/v2/speak`, suara Indonesia `flux-fitri-id`) dan diputar sambil diunduh. Selama agent berpikir dan bicara, rekaman dijeda supaya suara agent tidak terekam.
 4. Setelah agent selesai bicara, aplikasi kembali mendengarkan.
 
