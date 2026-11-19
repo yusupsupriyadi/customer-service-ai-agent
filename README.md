@@ -9,7 +9,7 @@ Web chat customer service sederhana yang menjawab pertanyaan pelanggan berdasark
 3. Isi **Konteks teks** dengan info usaha, dan/atau pilih file PDF (misalnya daftar harga atau FAQ toko).
 4. Ketik pertanyaan di kolom chat seolah-olah Anda pelanggan, lalu tekan Enter.
 5. Untuk bertanya lewat suara, tempel juga API key Deepgram di kolom **API key Deepgram**, lalu:
-   - tekan **Rekam**, bicara, lalu tekan **Selesai** (suara diubah menjadi teks lalu dikirim), atau
+   - tekan tombol **mic**, lalu bicara: teksnya muncul langsung di kolom pertanyaan. Tekan tombol mic lagi untuk mengirim, atau
    - tekan **Telepon** untuk mengobrol langsung dengan agent seperti menelepon, lalu **Akhiri panggilan** kalau sudah.
 
 Perlu koneksi internet, karena Tailwind, pembaca PDF (pdf.js), API Netra, dan API Deepgram dimuat dari internet. Fitur suara perlu mikrofon dan browser Chrome atau Edge terbaru.
@@ -29,18 +29,18 @@ Perlu koneksi internet, karena Tailwind, pembaca PDF (pdf.js), API Netra, dan AP
 
 ### Input suara (Tingkat 3)
 
-1. Tombol **Rekam** merekam mikrofon dengan `MediaRecorder`.
-2. Rekaman dikirim ke `https://api.deepgram.com/v1/listen` dengan model `nova-3` dan bahasa Indonesia (`language=id`).
-3. Teks hasilnya dikirim lewat form chat, sama seperti pertanyaan yang diketik.
+1. Tombol **mic** membuka mikrofon dan WebSocket ke `wss://api.deepgram.com/v1/listen` (model `nova-3`, bahasa Indonesia `language=id`), lalu mengirim potongan audio setiap 250 milidetik.
+2. Deepgram membalas dengan teks sementara dan teks final, dan teksnya langsung tampil di kolom pertanyaan selagi pelanggan bicara.
+3. Saat tombol mic ditekan lagi, aplikasi mengirim `CloseStream`, menunggu teks terakhir, lalu mengirim teks final lewat form chat, sama seperti pertanyaan yang diketik.
 
 ### Panggilan suara (Tingkat 4)
 
-1. Tombol **Telepon** membuka WebSocket ke `wss://api.deepgram.com/v1/listen` dan mengirim potongan audio mikrofon setiap 250 milidetik.
+1. Tombol **Telepon** membuka WebSocket yang sama dan mengirim potongan audio mikrofon setiap 250 milidetik selama panggilan.
 2. Saat Deepgram mengirim `UtteranceEnd` (pelanggan diam 1 detik), teks pelanggan dikirim ke Netra dengan aturan tambahan: jawaban pendek dan angka ditulis dengan huruf.
-3. Jawaban Netra dibacakan oleh text to speech Deepgram (`/v1/speak`, suara `aura-2-livia-it`) dan diputar sambil diunduh. Selama agent berpikir dan bicara, rekaman dijeda supaya suara agent tidak terekam.
+3. Jawaban Netra dibacakan oleh text to speech Flux Deepgram (`/v2/speak`, suara Indonesia `flux-fitri-id`) dan diputar sambil diunduh. Selama agent berpikir dan bicara, rekaman dijeda supaya suara agent tidak terekam.
 4. Setelah agent selesai bicara, aplikasi kembali mendengarkan.
 
-Deepgram belum punya suara Bahasa Indonesia. Suara Italia `aura-2-livia-it` dipilih karena paling mudah dikenali kembali oleh speech to text Deepgram saat membacakan teks Indonesia, dibanding beberapa suara Inggris dan Spanyol yang dicoba.
+Model Flux hanya tersedia di `/v2/speak`, bukan `/v1/speak`. Prompt telepon meminta angka dan jam ditulis dengan huruf, karena saat diuji jam "17.00" dibaca "satu tujuh ribu".
 
 ## Catatan keamanan
 
