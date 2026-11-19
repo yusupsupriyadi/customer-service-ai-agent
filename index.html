@@ -13,7 +13,7 @@
       --color-paper: #f5f4ef;
     }
     @layer base {
-      button, summary, a[href], label[for], input[type="checkbox"], input[type="file"] { cursor: pointer; }
+      button, summary, select, a[href], label[for], input[type="checkbox"], input[type="file"] { cursor: pointer; }
       button:disabled, input:disabled { cursor: not-allowed; }
       :focus-visible { outline: 3px solid #000; outline-offset: 3px; }
     }
@@ -96,6 +96,16 @@
         <div id="model-group">
           <label for="model" class="field-label">Model</label>
           <input id="model" type="text" spellcheck="false" value="deepseek/deepseek-v4.1-flash" class="field mt-1">
+        </div>
+
+        <div id="reasoning-group">
+          <label for="reasoning" class="field-label">Reasoning</label>
+          <p id="reasoning-hint" class="hint mt-1">Seberapa lama model berpikir sebelum menjawab. Makin tinggi, jawaban makin teliti tetapi makin lama. Untuk Telepon, pilih Mati atau Rendah supaya agent cepat menjawab.</p>
+          <select id="reasoning" aria-describedby="reasoning-hint" class="field mt-2">
+            <option value="off">Mati: paling cepat</option>
+            <option value="low">Rendah</option>
+            <option value="high" selected>Tinggi: paling teliti</option>
+          </select>
         </div>
 
         <div id="deepgram-key-group">
@@ -336,7 +346,7 @@
       <section id="langkah-1" aria-labelledby="langkah-1-title">
         <p class="step-label">Langkah 1</p>
         <h3 id="langkah-1-title">Membuat tampilan di index.html</h3>
-        <p>Halaman dibagi menjadi dua panel: Pengaturan di kiri dan Chat di kanan. Di layar HP, kedua panel bertumpuk ke bawah. Untuk Tingkat 1, panel Pengaturan berisi kolom API key, Model, dan Konteks teks.</p>
+        <p>Halaman dibagi menjadi dua panel: Pengaturan di kiri dan Chat di kanan. Di layar HP, kedua panel bertumpuk ke bawah. Untuk Tingkat 1, panel Pengaturan berisi kolom API key, Model, pilihan Reasoning, dan Konteks teks.</p>
         <p>Tailwind dipasang dengan satu tag script. Versi browser ini membaca class di HTML lalu membuat CSS-nya saat halaman dibuka, jadi kamu tidak perlu menjalankan npm.</p>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">index.html</span><button type="button" class="copy-btn" data-copy="code-tailwind">Salin</button></div>
@@ -445,7 +455,7 @@
         <p>Di browser, permintaan yang sama ditulis dengan <code>fetch</code>. Setiap <code>-H</code> menjadi isi <code>headers</code>, dan bagian <code>-d</code> menjadi <code>body</code>.</p>
         <div class="code-block">
           <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-fetch">Salin</button></div>
-          <pre class="code-pre"><code id="code-fetch">async function askAgent(apiKey, model, messages) {
+          <pre class="code-pre"><code id="code-fetch">async function askAgent(apiKey, model, messages, reasoning) {
   let response;
   try {
     response = await fetch(API_URL, {
@@ -459,7 +469,7 @@
         messages,
         // Token penalaran ikut dihitung di max_tokens, jadi batasnya dibuat cukup longgar.
         max_tokens: 2048,
-        reasoning: { enabled: true },
+        reasoning,
       }),
     });
   } catch {
@@ -482,6 +492,27 @@
         <p>Jawaban AI ada di <code>data.choices[0].message.content</code>. Kalau status HTTP menandakan gagal (<code>response.ok</code> bernilai <code>false</code>), fungsi <code>describeApiError</code> mengubah kode status menjadi pesan yang mudah dipahami.</p>
         <p>Nilai <code>max_tokens</code> dibuat 2048, bukan 64 seperti contoh curl. Menurut <a href="https://netra.sh/docs/chat-requests">dokumentasi chat request Netra</a>, token yang dipakai model untuk berpikir (reasoning) termasuk token keluaran, sehingga batas 64 bisa membuat jawaban kosong atau terpotong. Sebaliknya, batas yang terlalu besar membuat Netra menahan saldo lebih banyak untuk setiap permintaan.</p>
         <p>Teks hasil berpikir model dikirim terpisah di <code>choices[0].message.reasoning</code>. Aplikasi ini hanya menampilkan <code>content</code>, yaitu jawaban untuk pelanggan.</p>
+        <h4>Mengatur reasoning dari panel Pengaturan</h4>
+        <p>Reasoning adalah tahap berpikir model sebelum menjawab. Makin lama berpikir, jawaban makin teliti, tetapi pelanggan menunggu lebih lama. Karena itu panel Pengaturan punya pilihan Reasoning: Mati, Rendah, dan Tinggi. Setiap pilihan diubah menjadi isian <code>reasoning</code> yang dikirim ke Netra.</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-reasoning">Salin</button></div>
+          <pre class="code-pre"><code id="code-reasoning">// Pilihan Reasoning di panel Pengaturan. Menurut dokumentasi Netra, enabled: false mematikan tahap berpikir.
+const REASONING_OPTIONS = {
+  off: { enabled: false },
+  low: { enabled: true, effort: 'low' },
+  high: { enabled: true, effort: 'high' },
+};
+const DEFAULT_REASONING = 'high';</code></pre>
+        </div>
+        <p>Nilai <code>value</code> pada setiap <code>&lt;option&gt;</code> di kolom pilihan sama dengan nama isian di objek ini (<code>off</code>, <code>low</code>, <code>high</code>). Fungsi <code>getReasoning</code> membaca pilihan itu, lalu hasilnya dikirim sebagai argumen keempat <code>askAgent</code>:</p>
+        <div class="code-block">
+          <div class="code-bar"><span class="code-name">index.html, bagian script</span><button type="button" class="copy-btn" data-copy="code-get-reasoning">Salin</button></div>
+          <pre class="code-pre"><code id="code-get-reasoning">// Mengubah pilihan Reasoning di panel Pengaturan menjadi isian reasoning untuk Netra.
+function getReasoning() {
+  return REASONING_OPTIONS[el.reasoning.value] ?? REASONING_OPTIONS[DEFAULT_REASONING];
+}</code></pre>
+        </div>
+        <p>Menurut dokumentasi Netra, model DeepSeek V4 juga menerima tingkat <code>max</code>. Aplikasi ini tidak memakainya: berpikir paling lama bisa menghabiskan batas 2048 token sebelum jawabannya selesai ditulis.</p>
       </section>
 
       <section id="langkah-5" aria-labelledby="langkah-5-title">
@@ -1053,7 +1084,7 @@ function settlesWithin(promise, ms) {
     { role: 'system', content: `${buildSystemPrompt()}\n\n${CALL_RULES}` },
     ...state.history,
   ];
-  const replyPromise = askAgent(el.apiKey.value.trim(), el.model.value.trim() || DEFAULT_MODEL, messages);
+  const replyPromise = askAgent(el.apiKey.value.trim(), el.model.value.trim() || DEFAULT_MODEL, messages, getReasoning());
 
   // Seperti CS sungguhan: kalau jawabannya belum siap, agent bilang sedang mengecek.
   let waited = false;
@@ -1222,7 +1253,7 @@ function settlesWithin(promise, ms) {
           <li>Tambahkan kolom Nama toko di panel Pengaturan, lalu masukkan nilainya ke system prompt, misalnya "Kamu adalah customer service untuk Toko X".</li>
           <li>Tambahkan tombol Salin di setiap gelembung jawaban agent. Petunjuk: <code>navigator.clipboard.writeText()</code>.</li>
           <li>Kirim hanya 10 pesan terakhir ke API supaya token lebih hemat. Petunjuk: <code>state.history.slice(-10)</code>.</li>
-          <li>Ganti <code>reasoning: { enabled: true }</code> menjadi <code>{ enabled: false }</code>, lalu bandingkan kecepatan dan isi jawabannya. Menurut dokumentasi Netra, <code>enabled: true</code> memakai tingkat berpikir <code>high</code>.</li>
+          <li>Tanyakan hal yang sama dengan pilihan Reasoning Mati, Rendah, dan Tinggi, lalu bandingkan kecepatan dan isi jawabannya.</li>
         </ol>
         <h4>Tingkat 2</h4>
         <ol>
@@ -1238,7 +1269,7 @@ function settlesWithin(promise, ms) {
         <ol>
           <li>Ganti suara agent, misalnya ke suara Indonesia lain <code>flux-dewi-id</code>, lalu bandingkan mana yang lebih enak didengar. Daftar suaranya ada di <a href="https://developers.deepgram.com/docs/flux-tts/voices">dokumentasi suara Flux Deepgram</a>.</li>
           <li>Tambahkan kalimat jedamu sendiri di <code>CHECKING_LINES</code>, atau ganti nama agent di <code>AGENT_NAME</code>, lalu dengarkan bedanya saat menelepon.</li>
-          <li>Buat agent menjawab lebih cepat saat telepon dengan mematikan reasoning khusus untuk panggilan. Petunjuk: tambahkan parameter baru di <code>askAgent</code>.</li>
+          <li>Buat pilihan Reasoning khusus untuk telepon, terpisah dari chat, supaya chat tetap teliti dan telepon tetap cepat. Petunjuk: tambahkan satu kolom pilihan lagi, lalu kirim nilainya ke <code>askAgent</code> di <code>answerCustomer</code>.</li>
           <li>Tantangan: biarkan pelanggan memotong agent yang sedang bicara. Petunjuk: jangan jeda perekam, tambahkan <code>vad_events=true</code> di URL WebSocket, lalu hentikan suara agent saat Deepgram mengirim pesan <code>SpeechStarted</code>. Pakai headset, supaya suara agent tidak tertangkap mikrofon.</li>
         </ol>
       </section>
@@ -1260,6 +1291,13 @@ function settlesWithin(promise, ms) {
 
 const API_URL = 'https://api.netra.sh/v1/chat/completions';
 const DEFAULT_MODEL = 'deepseek/deepseek-v4.1-flash';
+// Pilihan Reasoning di panel Pengaturan. Menurut dokumentasi Netra, enabled: false mematikan tahap berpikir.
+const REASONING_OPTIONS = {
+  off: { enabled: false },
+  low: { enabled: true, effort: 'low' },
+  high: { enabled: true, effort: 'high' },
+};
+const DEFAULT_REASONING = 'high';
 const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
 const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 
@@ -1290,6 +1328,7 @@ const STORAGE = {
   apiKey: 'csagent.apiKey',
   deepgramKey: 'csagent.deepgramKey',
   model: 'csagent.model',
+  reasoning: 'csagent.reasoning',
   contextText: 'csagent.contextText',
 };
 
@@ -1308,6 +1347,7 @@ const el = {
   toggleKey: document.getElementById('btn-toggle-key'),
   rememberKey: document.getElementById('remember-key'),
   model: document.getElementById('model'),
+  reasoning: document.getElementById('reasoning'),
   contextText: document.getElementById('context-text'),
   pdfInput: document.getElementById('pdf-input'),
   pdfStatus: document.getElementById('pdf-status'),
@@ -1545,7 +1585,7 @@ function describeApiError(status, data) {
   return `Permintaan gagal (kode ${status})${detail ? `: ${detail}` : '.'}`;
 }
 
-async function askAgent(apiKey, model, messages) {
+async function askAgent(apiKey, model, messages, reasoning) {
   let response;
   try {
     response = await fetch(API_URL, {
@@ -1559,7 +1599,7 @@ async function askAgent(apiKey, model, messages) {
         messages,
         // Token penalaran ikut dihitung di max_tokens, jadi batasnya dibuat cukup longgar.
         max_tokens: 2048,
-        reasoning: { enabled: true },
+        reasoning,
       }),
     });
   } catch {
@@ -1572,6 +1612,11 @@ async function askAgent(apiKey, model, messages) {
   const reply = data?.choices?.[0]?.message?.content?.trim();
   if (!reply) throw new Error('Model tidak mengirim jawaban. Coba kirim ulang pertanyaannya.');
   return reply;
+}
+
+// Mengubah pilihan Reasoning di panel Pengaturan menjadi isian reasoning untuk Netra.
+function getReasoning() {
+  return REASONING_OPTIONS[el.reasoning.value] ?? REASONING_OPTIONS[DEFAULT_REASONING];
 }
 
 /* Tampilan chat */
@@ -1710,7 +1755,7 @@ async function handleSubmit(event) {
   const messages = [{ role: 'system', content: buildSystemPrompt() }, ...state.history];
 
   try {
-    const reply = await askAgent(apiKey, model, messages);
+    const reply = await askAgent(apiKey, model, messages, getReasoning());
     state.history.push({ role: 'assistant', content: reply });
     el.chatStatus.textContent = `Agent: ${reply}`;
   } catch (error) {
@@ -2103,7 +2148,7 @@ async function answerCustomer(question) {
     { role: 'system', content: `${buildSystemPrompt()}\n\n${CALL_RULES}` },
     ...state.history,
   ];
-  const replyPromise = askAgent(el.apiKey.value.trim(), el.model.value.trim() || DEFAULT_MODEL, messages);
+  const replyPromise = askAgent(el.apiKey.value.trim(), el.model.value.trim() || DEFAULT_MODEL, messages, getReasoning());
 
   // Seperti CS sungguhan: kalau jawabannya belum siap, agent bilang sedang mengecek.
   let waited = false;
@@ -2252,6 +2297,10 @@ el.model.addEventListener('change', () => {
   writeStorage(STORAGE.model, el.model.value.trim());
 });
 
+el.reasoning.addEventListener('change', () => {
+  writeStorage(STORAGE.reasoning, el.reasoning.value);
+});
+
 el.contextText.addEventListener('input', () => {
   writeStorage(STORAGE.contextText, el.contextText.value);
   updateContextSize();
@@ -2301,6 +2350,8 @@ document.querySelectorAll('[data-copy]').forEach((button) => {
 });
 
 el.model.value = readStorage(STORAGE.model) || DEFAULT_MODEL;
+const savedReasoning = readStorage(STORAGE.reasoning);
+el.reasoning.value = REASONING_OPTIONS[savedReasoning] ? savedReasoning : DEFAULT_REASONING;
 el.contextText.value = readStorage(STORAGE.contextText) || '';
 
 updateContextSize();

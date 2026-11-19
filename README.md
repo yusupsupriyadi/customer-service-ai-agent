@@ -7,7 +7,7 @@ Web chat customer service sederhana yang menjawab pertanyaan pelanggan berdasark
 1. Buka `index.html` di browser (klik dua kali file-nya), atau jalankan lewat ekstensi Live Server di VS Code.
 2. Tempel API key Netra di kolom **API key Netra**.
 3. Isi **Konteks teks** dengan info usaha, dan/atau pilih file PDF (misalnya daftar harga atau FAQ toko).
-4. Ketik pertanyaan di kolom chat seolah-olah Anda pelanggan, lalu tekan Enter.
+4. Ketik pertanyaan di kolom chat seolah-olah Anda pelanggan, lalu tekan Enter. Pilihan **Reasoning** (Mati, Rendah, Tinggi) mengatur seberapa lama model berpikir: makin tinggi makin teliti tetapi makin lambat. Untuk Telepon, Mati atau Rendah membuat agent menjawab lebih cepat.
 5. Untuk bertanya lewat suara, tempel juga API key Deepgram di kolom **API key Deepgram**, lalu:
    - tekan tombol **mic**, lalu bicara: teksnya muncul langsung di kolom pertanyaan. Tekan tombol mic lagi untuk mengirim, atau
    - tekan **Telepon** untuk mengobrol langsung dengan agent seperti menelepon, lalu **Akhiri panggilan** kalau sudah.
