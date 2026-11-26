@@ -6,6 +6,7 @@ import { askAgent, extractPdfText, formatNumber, readStorage, requestSpeech, wri
 import { MAX_CONTEXT_CHARS } from "@/lib/prompt";
 import { CallSession, Dictation, MAX_RECORDING_SECONDS, playAudio, type CallStatus, type VoiceStatus } from "@/lib/voice";
 import { VoiceMeter } from "@/components/voice-meter";
+import { ChatMarkdown } from "@/components/chat-markdown";
 
 const STORAGE = { agent: "csagent.agent", reasoning: "csagent.reasoning", contextText: "csagent.contextText" };
 const TILTS = ["-1.5deg", "1.2deg", "-0.8deg", "1.6deg", "-1.2deg"];
@@ -489,7 +490,11 @@ export function Studio() {
                     <div key={index} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[85%] rounded-2xl border-[2.5px] border-ink px-3 py-2 shadow-[3px_3px_0_0_var(--color-ink)] ${isUser ? "rounded-br-sm bg-yellow" : "rounded-bl-sm bg-paper"}`}>
                         <p className="text-xs font-extrabold">{isUser ? "Pelanggan" : agent.name}</p>
-                        <p className="mt-1 text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                        {isUser ? (
+                          <p className="mt-1 text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                        ) : (
+                          <ChatMarkdown text={message.content} />
+                        )}
                       </div>
                     </div>
                   );

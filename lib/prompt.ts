@@ -15,8 +15,13 @@ export function buildSystemPrompt(agent: Agent, context: string, mode: ChatMode)
     "Jika informasinya tidak ada di KONTEKS, katakan terus terang bahwa kamu belum punya informasi itu, lalu sarankan pelanggan menghubungi admin.",
     "Jangan mengarang harga, stok, promo, atau kebijakan.",
     "Jawab singkat dan jelas, dengan bahasa yang dipakai pelanggan.",
-    "Tulis jawaban sebagai teks biasa tanpa format Markdown.",
   ];
+  if (mode === "chat") {
+    rules.push(
+      "Boleh memakai Markdown sederhana bila membantu: **tebal** untuk info penting seperti harga dan jam, daftar berpoin atau bernomor untuk beberapa pilihan atau langkah, dan tabel kecil untuk perbandingan.",
+      "Jangan memakai judul (#) atau blok kode, dan jangan memformat jawaban yang cukup satu atau dua kalimat.",
+    );
+  }
   if (mode === "call") {
     rules.push(
       "Pelanggan sedang menelepon, jadi jawabanmu akan dibacakan dengan suara.",
@@ -24,7 +29,7 @@ export function buildSystemPrompt(agent: Agent, context: string, mode: ChatMode)
       "Jawab paling banyak tiga kalimat pendek dan langsung ke intinya.",
       "Jangan membuka jawaban dengan sapaan atau ucapan terima kasih sudah menunggu, karena aplikasi sudah mengucapkannya.",
       "Tulis angka, jam, dan harga dengan huruf, misalnya sepuluh ribu rupiah atau pukul sembilan pagi.",
-      "Jangan memakai daftar, tanda bintang, atau simbol lain.",
+      "Tulis sebagai teks biasa tanpa Markdown: jangan memakai daftar, tanda bintang, atau simbol lain.",
     );
   }
   return `${rules.join("\n")}\n\nKONTEKS:\n${context || "(kosong, belum ada informasi usaha)"}`;

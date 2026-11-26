@@ -44,6 +44,19 @@
   .field { @apply min-h-11 w-full min-w-0 rounded-xl border-[2.5px] border-ink bg-paper px-3 text-sm placeholder:text-muted; }
   .hint { @apply text-xs leading-relaxed text-muted; }
 
+  /* Markdown di gelembung jawaban agent. */
+  .chat-md > * + * { @apply mt-2; }
+  .chat-md p { @apply leading-relaxed; }
+  .chat-md strong { @apply font-extrabold; }
+  .chat-md ul { @apply list-disc space-y-1 pl-5; }
+  .chat-md ol { @apply list-decimal space-y-1 pl-5; }
+  .chat-md a { @apply font-bold underline decoration-2 underline-offset-2 hover:bg-yellow-soft; }
+  .chat-md code { @apply rounded bg-cream px-1 font-mono text-[0.9em]; }
+  .chat-md blockquote { @apply border-l-4 border-yellow pl-3; }
+  .chat-md table { @apply w-full border-collapse text-left text-xs; }
+  .chat-md th, .chat-md td { @apply border-2 border-ink px-2 py-1 align-top; }
+  .chat-md th { @apply bg-yellow font-extrabold; }
+
   /* Masuk dengan hentakan, seperti stiker yang ditempel. */
   .slam { animation: slam 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
   .slam-2 { animation-delay: 0.12s; }
