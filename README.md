@@ -34,4 +34,6 @@ API key hanya ada di `.env.local` (tidak di-commit) dan dipakai oleh route API d
 
 ## Hosting
 
-Aplikasi ini butuh server (route API), jadi tidak bisa lagi berjalan di GitHub Pages. Pakai hosting Next.js seperti Vercel, dan isi `NETRA_API_KEY` serta `DEEPGRAM_API_KEY` di pengaturan environment variable hosting.
+Live di Vercel: https://customer-service-ai-agent-two.vercel.app
+
+Repo ini tersambung ke project Vercel `customer-service-ai-agent`, jadi setiap push ke `main` otomatis dideploy ke production. `NETRA_API_KEY`, `NETRA_MODEL`, dan `DEEPGRAM_API_KEY` diisi di Environment Variables project Vercel (Production dan Preview). Aplikasi ini butuh server (route API), jadi tidak bisa lagi berjalan di GitHub Pages.
