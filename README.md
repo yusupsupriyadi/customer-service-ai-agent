@@ -1,47 +1,37 @@
-# Customer Service Agent (Contoh Project)
+# CS Agent (Contoh Project)
 
-Web chat customer service sederhana yang menjawab pertanyaan pelanggan berdasarkan konteks yang Anda berikan: teks biasa dan dokumen PDF. Pelanggan bisa bertanya dengan mengetik, merekam suara, atau menelepon agent. Dibuat hanya dengan HTML, Tailwind, dan JavaScript, tanpa server.
+Agent customer service yang menjawab pertanyaan pelanggan dari info usaha yang kamu berikan (teks dan PDF), lewat chat, dikte suara, atau telepon. Ada lima pilihan agent dengan suara Flux Deepgram Bahasa Indonesia: Fitri, Dewi, Fajar, Rizky, dan Teguh. Dibuat dengan Next.js 16, Tailwind CSS 4, Netra (model AI), dan Deepgram (suara).
 
 ## Cara menjalankan
 
-1. Buka `index.html` di browser (klik dua kali file-nya), atau jalankan lewat ekstensi Live Server di VS Code.
-2. Tempel API key Netra di kolom **API key Netra**.
-3. Isi **Konteks teks** dengan info usaha, dan/atau pilih file PDF (misalnya daftar harga atau FAQ toko).
-4. Ketik pertanyaan di kolom chat seolah-olah Anda pelanggan, lalu tekan Enter. Pilihan **Reasoning** (Mati, Rendah, Tinggi) mengatur seberapa lama model berpikir: makin tinggi makin teliti tetapi makin lambat. Untuk Telepon, Mati atau Rendah membuat agent menjawab lebih cepat.
-5. Untuk bertanya lewat suara, tempel juga API key Deepgram di kolom **API key Deepgram**, lalu:
-   - tekan tombol **mic**, lalu bicara: teksnya muncul langsung di kolom pertanyaan. Tekan tombol mic lagi untuk mengirim, atau
-   - tekan **Telepon** untuk mengobrol langsung dengan agent seperti menelepon, lalu **Akhiri panggilan** kalau sudah.
+1. `npm install`
+2. Salin `.env.example` menjadi `.env.local`, lalu isi:
+   - `NETRA_API_KEY`: key dari dashboard Netra.
+   - `DEEPGRAM_API_KEY`: key dari Deepgram Console, peran Member atau lebih tinggi.
+   - `NETRA_MODEL` (opsional): bawaannya `deepseek/deepseek-v4.1-flash`.
+3. `npm run dev`, lalu buka http://localhost:3000.
 
-Perlu koneksi internet, karena Tailwind, pembaca PDF (pdf.js), API Netra, dan API Deepgram dimuat dari internet. Fitur suara perlu mikrofon dan browser Chrome atau Edge terbaru.
+Next.js hanya membaca `.env.local` saat server mulai, jadi jalankan ulang `npm run dev` setelah mengubah key. Badge di bagian Studio menunjukkan key mana yang belum diisi.
 
-## Struktur file
+## Struktur
 
-| File | Isi |
+| Path | Isi |
 |------|-----|
-| `index.html` | Aplikasi dan tutorial dalam satu file. Bagian atas berisi panel Pengaturan dan panel Chat, bagian bawah berisi tutorial empat tingkat (tombol "Baca tutorial" di header): Tingkat 1 memakai konteks teks saja, Tingkat 2 menambahkan konteks dari PDF, Tingkat 3 menambahkan pertanyaan lewat rekaman suara, dan Tingkat 4 menambahkan panggilan suara. Bagian `<script>` di akhir file membaca PDF, menyusun konteks, memanggil API, merekam suara, dan menampilkan chat. |
+| `app/page.tsx` | Halaman utama: hero dengan animasi kanvas, pilihan agent, studio tes. |
+| `app/tutorial/page.tsx` | Tutorial empat tingkat untuk kelas 11. Kode di dalamnya dibaca langsung dari file project. |
+| `app/api/chat/route.ts` | Meneruskan pertanyaan ke Netra dengan key dari env. System prompt disusun di server. |
+| `app/api/speak/route.ts` | Teks ke suara Flux Deepgram (`/v2/speak`), suara MP3 diteruskan sambil diunduh. |
+| `app/api/listen-token/route.ts` | Membuat token Deepgram sementara (30 detik) untuk WebSocket speech to text di browser. |
+| `app/api/status/route.ts` | Memberi tahu key mana yang sudah diisi, tanpa isi key-nya. |
+| `components/studio.tsx` | Pilihan agent, panel pengetahuan, chat, mic, dan bar telepon. |
+| `components/hero-scene.tsx`, `lib/motion.ts` | Animasi kanvas bergaya Motion Format: semua gerak dihitung dari waktu `t`. |
+| `lib/agents.ts` | Daftar agent: suara Flux dan gaya bicara. |
+| `lib/voice.ts` | Dikte suara dan putaran telepon (dengar, jawab, bacakan, dengar lagi). |
 
-## Alur kerja
+## Keamanan
 
-1. Teks dari kolom konteks dan dari setiap PDF digabung menjadi satu **konteks** (maksimal 60.000 karakter).
-2. Konteks dimasukkan ke **system prompt**, yaitu aturan kerja agent: jawab hanya dari konteks, jangan mengarang harga atau kebijakan.
-3. Setiap kali pelanggan bertanya, aplikasi mengirim system prompt beserta seluruh riwayat chat ke `https://api.netra.sh/v1/chat/completions`. Riwayat ikut dikirim karena API tidak mengingat percakapan sebelumnya.
-4. Jawaban diambil dari `choices[0].message.content` lalu ditampilkan sebagai gelembung chat.
+API key hanya ada di `.env.local` (tidak di-commit) dan dipakai oleh route API di server. Browser hanya menerima token Deepgram sementara. Route API menolak permintaan dari website lain dan membatasi jumlah permintaan per IP. Rekaman suara pelanggan tetap dikirim ke Deepgram untuk diubah menjadi teks.
 
-### Input suara (Tingkat 3)
+## Hosting
 
-1. Tombol **mic** membuka mikrofon dan WebSocket ke `wss://api.deepgram.com/v1/listen` (model `nova-3`, bahasa Indonesia `language=id`), lalu mengirim potongan audio setiap 250 milidetik.
-2. Deepgram membalas dengan teks sementara dan teks final, dan teksnya langsung tampil di kolom pertanyaan selagi pelanggan bicara.
-3. Saat tombol mic ditekan lagi, aplikasi mengirim `CloseStream`, menunggu teks terakhir, lalu mengirim teks final lewat form chat, sama seperti pertanyaan yang diketik.
-
-### Panggilan suara (Tingkat 4)
-
-1. Tombol **Telepon** membuka WebSocket yang sama dan mengirim potongan audio mikrofon setiap 250 milidetik selama panggilan.
-2. Saat Deepgram mengirim `UtteranceEnd` (pelanggan diam 1 detik), teks pelanggan dikirim ke Netra dengan aturan tambahan: bahasa lisan yang sopan, jawaban pendek, dan angka ditulis dengan huruf. Kalau jawaban belum siap dalam 1 detik, agent bilang "sebentar ya Kak, saya cek dulu" (dan "masih saya cek" kalau lama), lalu membuka jawaban dengan "makasih sudah menunggu". Agent menyapa sesuai jam dan memperkenalkan diri sebagai Fitri.
-3. Jawaban Netra dibacakan oleh text to speech Flux Deepgram (`/v2/speak`, suara Indonesia `flux-fitri-id`) dan diputar sambil diunduh. Selama agent berpikir dan bicara, rekaman dijeda supaya suara agent tidak terekam.
-4. Setelah agent selesai bicara, aplikasi kembali mendengarkan.
-
-Model Flux hanya tersedia di `/v2/speak`, bukan `/v1/speak`. Prompt telepon meminta angka dan jam ditulis dengan huruf, karena saat diuji jam "17.00" dibaca "satu tujuh ribu".
-
-## Catatan keamanan
-
-API key Netra dan Deepgram disimpan dan dipakai langsung di browser. Siapa pun yang membuka DevTools di komputer itu bisa melihatnya. Pola ini cukup untuk belajar, tetapi untuk website publik API key harus disimpan di server (backend), bukan di browser. Rekaman suara pelanggan dikirim ke server Deepgram untuk diubah menjadi teks.
+Aplikasi ini butuh server (route API), jadi tidak bisa lagi berjalan di GitHub Pages. Pakai hosting Next.js seperti Vercel, dan isi `NETRA_API_KEY` serta `DEEPGRAM_API_KEY` di pengaturan environment variable hosting.
