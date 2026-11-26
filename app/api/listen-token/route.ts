@@ -23,6 +23,9 @@ export async function POST(request: Request) {
     return jsonError("Server tidak bisa terhubung ke Deepgram. Periksa koneksi internet.", 502);
   }
   const data = await response.json().catch(() => null);
+  if (response.status === 403) {
+    return jsonError("DEEPGRAM_API_KEY tidak punya izin membuat token. Buat key baru dengan peran Member atau lebih tinggi.", 502);
+  }
   if (!response.ok || !data?.access_token) return jsonError(describeDeepgramError(response.status), 502);
 
   const socketBase = env.deepgramUrl.replace(/^http/, "ws");
